@@ -1,0 +1,39 @@
+{
+  "name": "@gemstation/contracts-foundry",
+  "version": "1.0.0",
+  "description": "Gemforge diamond standard contracts scaffolding using Foundry.",
+  "license": "MIT",
+  "scripts": {
+    "prepare": "husky install && npx husky add .husky/commit-msg 'npx commitlint --edit $1'",
+    "prettify": "prettier --write .",
+    "devnet": "anvil",
+    "clean": "forge clean",
+    "test": "forge test -vv",
+    "test-cov": "forge coverage -vv",
+    "build": "gemforge build",
+    "dep": "gemforge deploy"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^17.2.0",
+    "@commitlint/config-conventional": "^17.2.0",
+    "@types/node": "^18.16.16",
+    "dotenv": "^16.3.1",
+    "execa": "^8.0.1",
+    "gemforge": "^2.7.0",
+    "husky": "^8.0.2",
+    "prettier": "^2.8.8",
+    "solc": "^0.8.21",
+    "solhint": "^3.3.7",
+    "solidity-coverage": "^0.7.21",
+    "solidity-docgen": "^0.5.17"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "engineStrict": true
+}
