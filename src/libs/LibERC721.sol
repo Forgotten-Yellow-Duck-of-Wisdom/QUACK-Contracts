@@ -34,7 +34,7 @@ library LibERC721 {
         if (size > 0) {
             require(
                 ERC721_RECEIVED == IERC721TokenReceiver(_to).onERC721Received(_operator, _from, _tokenId, _data),
-                "AavegotchiFacet: Transfer rejected/failed by _to"
+                "DuckFacet: Transfer rejected/failed by _to"
             );
         }
     }

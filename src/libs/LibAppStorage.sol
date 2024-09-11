@@ -5,17 +5,6 @@ import {MetaTxContextStorage, CollateralTypeInfo} from "../shared/Structs.sol";
 import {Cycle, DuckInfo} from "../shared/Structs_Ducks.sol";
 import {ILink} from "../interfaces/ILink.sol";
 
-uint8 constant STATUS_CLOSED_EGG = 0;
-uint8 constant STATUS_VRF_PENDING = 1;
-uint8 constant STATUS_OPEN_EGG = 2;
-uint8 constant STATUS_DUCK = 3;
-
-uint256 constant EQUIPPED_WEARABLE_SLOTS = 16;
-uint256 constant NUMERIC_TRAITS_NUM = 6;
-uint256 constant TRAIT_BONUSES_NUM = 5;
-uint256 constant EGG_DUCKS_NUM = 10;
-
-
 struct AppStorage {
     /////////////////// Global Diamond ///////////////////
     bool diamondInitialized;
@@ -25,15 +14,14 @@ struct AppStorage {
     address treasuryAddress;
     address quackTokenAddress;
     /////////////////// Collateral ///////////////////
-    // // address of ERC20 tokens considered as collateral
-    // address[] collateralTypes;
-    // // erc20 address => index in collateralType[]
-    // mapping(address => uint256) collateralTypeIndexes;
-    // // erc20 address => collateral info struct
-    // mapping(address => CollateralTypeInfo) collateralTypeInfo;
-    // // cycleId => collateral addresses[]
-    // mapping(uint256 => address[]) cycleCollateralTypes;
-
+    // address of ERC20 tokens considered as collateral
+    address[] collateralTypes;
+    // erc20 address => index in collateralType[]
+    mapping(address => uint256) collateralTypeIndexes;
+    // erc20 address => collateral info struct
+    mapping(address => CollateralTypeInfo) collateralTypeInfo;
+    // cycleId => collateral addresses[]
+    mapping(uint256 => address[]) cycleCollateralTypes;
     /////////////////// Chainlink-VRF ///////////////////
     mapping(bytes32 => uint256) vrfRequestIdToTokenId;
     mapping(bytes32 => uint256) vrfNonces;
@@ -87,8 +75,6 @@ struct AppStorage {
 
 library LibAppStorage {
     bytes32 internal constant DIAMOND_APP_STORAGE_POSITION = keccak256("diamond.app.storage");
-
-
 
     function diamondStorage() internal pure returns (AppStorage storage ds) {
         bytes32 position = DIAMOND_APP_STORAGE_POSITION;

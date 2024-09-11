@@ -1,27 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
 
-import {DuckInfo, DuckInfoMemory, EggDuckTraitsDTO} from "../shared/Structs_Ducks.sol";
 import {
-    AppStorage, 
-    LibAppStorage, 
-    NUMERIC_TRAITS_NUM, 
-    EQUIPPED_WEARABLE_SLOTS, 
-    TRAIT_BONUSES_NUM, 
-    EGG_DUCKS_NUM,
-    STATUS_DUCK,
-    STATUS_OPEN_EGG,
-    STATUS_CLOSED_EGG,
-    STATUS_VRF_PENDING
-    } from "./LibAppStorage.sol";
+    DuckInfo,
+    DuckInfoMemory,
+    EggDuckTraitsDTO,
+    DuckStatus,
+    NUMERIC_TRAITS_NUM,
+    EQUIPPED_WEARABLE_SLOTS,
+    TRAIT_BONUSES_NUM,
+    EGG_DUCKS_NUM
+} from "../shared/Structs_Ducks.sol";
+import {AppStorage, LibAppStorage} from "./LibAppStorage.sol";
 import {IERC20} from "../interfaces/IERC20.sol";
+import {CollateralEscrow} from "../facades/CollateralEscrow.sol";
 import {LibERC721} from "./LibERC721.sol";
-
+import {LibString} from "./LibString.sol";
+import {LibMaths} from "./LibMaths.sol";
 // error ERC20NotEnoughBalance(address sender);
 
 library LibDuck {
-
-
     //   /**
     //    * @dev Emitted when a token is minted.
     //    */
@@ -64,6 +62,65 @@ library LibDuck {
         emit LibERC721.Transfer(_from, _to, _tokenId);
     }
 
+    ///@notice Allows the owner of an NFT(Portal) to claim an Duck provided it has been unlocked
+    ///@dev Will throw if the Portal(with identifier `_tokenid`) has not been opened(Unlocked) yet
+    ///@dev If the NFT(Portal) with identifier `_tokenId` is listed for sale on the baazaar while it is being unlocked, that listing is cancelled
+    ///@param _tokenId The identifier of NFT to claim an Duck from
+    ///@param _option The index of the Duck to claim(1-10)
+    ///@param _stakeAmount Minimum amount of collateral tokens needed to be sent to the new Duck escrow contract
+    function claimDuck(uint256 _tokenId, address _owner, uint256 _option, uint256 _stakeAmount) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        DuckInfo storage duck = s.ducks[_tokenId];
+        require(duck.status == DuckStatus.OPEN_EGG, "DuckGameFacet: Egg not open");
+        require(_option < EGG_DUCKS_NUM, "DuckGameFacet: Only 10 duck options available");
+        uint256 randomNumber = s.tokenIdToRandomNumber[_tokenId];
+        uint256 hauntId = s.ducks[_tokenId].hauntId;
+
+        EggDuckTraitsDTO memory option = singleEggDuckTraits(hauntId, randomNumber, _option);
+        duck.randomNumber = option.randomNumber;
+        duck.numericTraits = option.numericTraits;
+        duck.collateralType = option.collateralType;
+        duck.minimumStake = option.minimumStake;
+        duck.lastInteracted = uint40(block.timestamp - 12 hours);
+        duck.interactionCount = 50;
+        duck.claimTime = uint40(block.timestamp);
+
+        require(_stakeAmount >= option.minimumStake, "DuckGameFacet: _stakeAmount less than minimum stake");
+
+        duck.status = DuckStatus.DUCK;
+        // TODO : wip events
+        // emit DuckClaimed(_tokenId);
+
+        address escrow = address(new CollateralEscrow(option.collateralType));
+        duck.escrow = escrow;
+        (bool success,) = IERC20(option.collateralType).transferFrom(_owner, escrow, _stakeAmount);
+        if (!success) {
+            revert("DuckGameFacet: Transfer failed");
+        }
+        // LibERC20.transferFrom(option.collateralType, _owner, escrow, _stakeAmount);
+        // TODO : Duck Marcketplace
+        // LibERC721Marketplace.cancelERC721Listing(address(this), _tokenId, _owner);
+    }
+
+    ///@notice Allows the owner of a NFT to set a name for it
+    ///@dev only valid for claimed Ducks
+    ///@dev Will throw if the name has been used for another claimed Duck
+    ///@param _tokenId the identifier if the NFT to name
+    ///@param _name Preferred name to give the claimed Duck
+    function setDuckName(uint256 _tokenId, string calldata _name) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        require(s.ducks[_tokenId].status == DuckStatus.DUCK, "DuckGameFacet: Must claim Duck before setting name");
+        string memory lowerName = LibString.validateAndLowerName(_name);
+        string memory existingName = s.ducks[_tokenId].name;
+        if (bytes(existingName).length > 0) {
+            delete s.duckNamesUsed[LibString.validateAndLowerName(existingName)];
+        }
+        require(!s.duckNamesUsed[lowerName], "DuckGameFacet: Duck name used already");
+        s.duckNamesUsed[lowerName] = true;
+        s.ducks[_tokenId].name = _name;
+        // TODO : wip events    
+        // emit SetDuckName(_tokenId, existingName, _name);
+    }
     ///////////////////////////////////////////
     // MARK: Getters
     ///////////////////////////////////////////
@@ -75,7 +132,7 @@ library LibDuck {
         duckInfo_.randomNumber = s.ducks[_tokenId].randomNumber;
         duckInfo_.status = s.ducks[_tokenId].status;
         duckInfo_.cycleId = s.ducks[_tokenId].cycleId;
-        if (duckInfo_.status == STATUS_DUCK) {
+        if (duckInfo_.status == DuckStatus.DUCK) {
             duckInfo_.name = s.ducks[_tokenId].name;
             duckInfo_.equippedWearables = s.ducks[_tokenId].equippedWearables;
             duckInfo_.collateral = s.ducks[_tokenId].collateralType;
@@ -89,7 +146,7 @@ library LibDuck {
             duckInfo_.level = duckLevel(s.ducks[_tokenId].experience);
             duckInfo_.usedSkillPoints = s.ducks[_tokenId].usedSkillPoints;
             duckInfo_.numericTraits = s.ducks[_tokenId].numericTraits;
-            duckInfo_.baseRarityScore = baseRarityScore(duckInfo_.numericTraits);
+            duckInfo_.baseRarityScore = LibMaths.baseRarityScore(duckInfo_.numericTraits);
             (duckInfo_.modifiedNumericTraits, duckInfo_.modifiedRarityScore) = modifiedTraitsAndRarityScore(_tokenId);
             duckInfo_.locked = s.ducks[_tokenId].locked;
             // TODO : wip add items
@@ -121,33 +178,8 @@ library LibDuck {
             return 99;
         }
 
-        level_ = (sqrt(2 * _experience) / 10);
+        level_ = (LibMaths.sqrt(2 * _experience) / 10);
         return level_ + 1;
-    }
-
-    function sqrt(uint256 x) internal pure returns (uint256 y) {
-        uint256 z = (x + 1) / 2;
-        y = x;
-        while (z < y) {
-            y = z;
-            z = (x / z + z) / 2;
-        }
-    }
-    //Calculates the base rarity score, including collateral modifier
-
-    function baseRarityScore(int16[NUMERIC_TRAITS_NUM] memory _numericTraits)
-        internal
-        pure
-        returns (uint256 _rarityScore)
-    {
-        for (uint256 i; i < NUMERIC_TRAITS_NUM; i++) {
-            int256 number = _numericTraits[i];
-            if (number >= 50) {
-                _rarityScore += uint256(number) + 1;
-            } else {
-                _rarityScore += uint256(int256(100) - number);
-            }
-        }
     }
 
     //Only valid for claimed Ducks
@@ -157,7 +189,7 @@ library LibDuck {
         returns (int16[NUMERIC_TRAITS_NUM] memory numericTraits_, uint256 rarityScore_)
     {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        require(s.ducks[_tokenId].status == STATUS_DUCK, "DuckFacet: Must be claimed");
+        require(s.ducks[_tokenId].status == DuckStatus.DUCK, "DuckFacet: Must be claimed");
         DuckInfo storage duck = s.ducks[_tokenId];
         numericTraits_ = getNumericTraits(_tokenId);
         // TODO : wip items
@@ -174,7 +206,7 @@ library LibDuck {
         //     }
         //     wearableBonus += itemType.rarityScoreModifier;
         // }
-        uint256 baseRarity = baseRarityScore(numericTraits_);
+        uint256 baseRarity = LibMaths.baseRarityScore(numericTraits_);
         rarityScore_ = baseRarity + wearableBonus;
     }
 
@@ -199,11 +231,13 @@ library LibDuck {
         }
     }
 
-    function eggDuckTraits(
-        uint256 _tokenId
-    ) internal view returns (EggDuckTraitsDTO[EGG_DUCKS_NUM] memory eggDuckTraits_) {
+    function eggDuckTraits(uint256 _tokenId)
+        internal
+        view
+        returns (EggDuckTraitsDTO[EGG_DUCKS_NUM] memory eggDuckTraits_)
+    {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        require(s.ducks[_tokenId].status == STATUS_OPEN_EGG, "DuckFacet: Egg not open");
+        require(s.ducks[_tokenId].status == DuckStatus.OPEN_EGG, "DuckFacet: Egg not open");
 
         uint256 randomNumber = s.eggIdToRandomNumber[_tokenId];
 
@@ -218,17 +252,19 @@ library LibDuck {
         }
     }
 
-    function singleEggDuckTraits(
-        uint256 _cycleId,
-        uint256 _randomNumber,
-        uint256 _option
-    ) internal view returns (EggDuckTraitsDTO memory singleEggDuckTraits_) {
+    function singleEggDuckTraits(uint256 _cycleId, uint256 _randomNumber, uint256 _option)
+        internal
+        view
+        returns (EggDuckTraitsDTO memory singleEggDuckTraits_)
+    {
         AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 randomNumberN = uint256(keccak256(abi.encodePacked(_randomNumber, _option)));
         singleEggDuckTraits_.randomNumber = randomNumberN;
 
-        address collateralType = s.cycleCollateralTypes[_cycleId][randomNumberN % s.cycleCollateralTypes[_cycleId].length];
-        singleEggDuckTraits_.numericTraits = toNumericTraits(randomNumberN, s.collateralTypeInfo[collateralType].modifiers, _cycleId);
+        address collateralType =
+            s.cycleCollateralTypes[_cycleId][randomNumberN % s.cycleCollateralTypes[_cycleId].length];
+        singleEggDuckTraits_.numericTraits =
+            LibMaths.toNumericTraits(randomNumberN, s.collateralTypeInfo[collateralType].modifiers, _cycleId);
         singleEggDuckTraits_.collateralType = collateralType;
 
         // TODO : wip dynamic collateral price
@@ -236,7 +272,7 @@ library LibDuck {
         // uint256 conversionRate = collateralInfo.conversionRate;
 
         // //Get rarity multiplier
-        // uint256 multiplier = rarityMultiplier(singleEggDuckTraits_.numericTraits);
+        // uint256 multiplier = LibMaths.rarityMultiplier(singleEggDuckTraits_.numericTraits);
 
         // //First we get the base price of our collateral in terms of DAI
         // uint256 collateralDAIPrice = ((10 ** IERC20(collateralType).decimals()) / conversionRate);
@@ -248,52 +284,63 @@ library LibDuck {
         singleEggDuckTraits_.minimumStake = 1;
     }
 
-/// @notice Generates numeric traits for a duck based on a random number, modifiers, and cycle ID
-/// @dev Different algorithms are used for Cycle 1 and other cycles to create varied trait distributions
-/// @param _randomNumber A seed used to generate random trait values
-/// @param _modifiers An array of modifiers to adjust the base trait values
-/// @param _cycleId Determines which algorithm to use for trait generation
-/// @return numericTraits_ An array of numeric traits for the duck
-    function toNumericTraits(
-        uint256 _randomNumber,
-        int16[NUMERIC_TRAITS_NUM] memory _modifiers,
-        uint256 _cycleId
-    ) internal pure returns (int16[NUMERIC_TRAITS_NUM] memory numericTraits_) {
-        if (_cycleId == 1) {
-            for (uint256 i; i < NUMERIC_TRAITS_NUM; i++) {
-                uint256 value = uint8(uint256(_randomNumber >> (i * 8)));
-                if (value > 99) {
-                    value /= 2;
-                    if (value > 99) {
-                        value = uint256(keccak256(abi.encodePacked(_randomNumber, i))) % 100;
-                    }
-                }
-                numericTraits_[i] = int16(int256(value)) + _modifiers[i];
-            }
-        } else {
-            for (uint256 i; i < NUMERIC_TRAITS_NUM; i++) {
-                uint256 value = uint8(uint256(_randomNumber >> (i * 8)));
-                if (value > 99) {
-                    value = value - 100;
-                    if (value > 99) {
-                        value = uint256(keccak256(abi.encodePacked(_randomNumber, i))) % 100;
-                    }
-                }
-                numericTraits_[i] = int16(int256(value)) + _modifiers[i];
+    ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
+    ///@dev only valid for claimed ducks
+    ///@param _tokenId The identifier of the NFT to spend the skill points on
+    ///@param _values An array of four integers that represent the values of the skill points
+    function spendSkillPoints(uint256 _tokenId, int16[4] calldata _values) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        //To test: Prevent underflow (is this ok?), see require below
+        uint256 totalUsed;
+        for (uint256 index; index < _values.length; index++) {
+            totalUsed += LibMaths.abs(_values[index]);
+
+            s.ducks[_tokenId].numericTraits[index] += _values[index];
+        }
+        // handles underflow
+        require(availableSkillPoints(_tokenId) >= totalUsed, "DuckGameFacet: Not enough skill points");
+        //Increment used skill points
+        s.ducks[_tokenId].usedSkillPoints += totalUsed;
+        // TODO : wip events
+        // emit SpendSkillpoints(_tokenId, _values);
+    }
+
+    ///@notice Query the available skill points that can be used for an NFT
+    ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used
+    ///@param _tokenId The identifier of the NFT to query
+    ///@return   An unsigned integer which represents the available skill points of an NFT with identifier `_tokenId`
+    function availableSkillPoints(uint256 _tokenId) internal view returns (uint256) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        uint256 skillPoints = LibDuck.calculateSkillPoints(_tokenId);
+        uint256 usedSkillPoints = s.ducks[_tokenId].usedSkillPoints;
+        require(skillPoints >= usedSkillPoints, "LibDuck: Used skill points is greater than skill points");
+        return skillPoints - usedSkillPoints;
+    }
+
+    function calculateSkillPoints(uint256 _tokenId, uint256 experience, uint256 claimTime)
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 level = duckLevel(experience);
+        uint256 skillPoints = (level / 3);
+
+        uint256 ageDifference = block.timestamp - claimTime;
+        return skillPoints + calculateSkillPointsByAge(ageDifference);
+    }
+
+    function calculateSkillPointsByAge(uint256 _age) internal pure returns (uint256) {
+        uint256 skillPointsByAge = 0;
+        uint256[10] memory fibSequence = [uint256(1), 2, 3, 5, 8, 13, 21, 34, 55, 89];
+        for (uint256 i = 0; i < fibSequence.length; i++) {
+            if (_age > fibSequence[i] * 2300000) {
+                skillPointsByAge++;
+            } else {
+                break;
             }
         }
+        return skillPointsByAge;
     }
-
-    function rarityMultiplier(int16[NUMERIC_TRAITS_NUM] memory _numericTraits) internal pure returns (uint256 multiplier) {
-        uint256 rarityScore = baseRarityScore(_numericTraits);
-        if (rarityScore < 300) return 10;
-        else if (rarityScore >= 300 && rarityScore < 450) return 10;
-        else if (rarityScore >= 450 && rarityScore <= 525) return 25;
-        else if (rarityScore >= 526 && rarityScore <= 580) return 100;
-        else if (rarityScore >= 581) return 1000;
-    }
-
-
 
     /////////////////////////////////////////////////////////////////////////////////
     // Internal Checks

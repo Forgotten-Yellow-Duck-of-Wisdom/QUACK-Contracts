@@ -10,8 +10,6 @@ import {LibERC721} from "../libs/LibERC721.sol";
 import {LibString} from "../libs/LibString.sol";
 
 /**
- * Protocol Admin Facet - 
+ * Protocol Admin Facet -
  */
-contract AdminFacet is AccessControl {
-
-}
+contract AdminFacet is AccessControl {}

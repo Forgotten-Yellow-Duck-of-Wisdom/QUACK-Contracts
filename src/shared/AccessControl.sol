@@ -19,4 +19,19 @@ abstract contract AccessControl is MetaContext {
         }
         _;
     }
+
+    modifier onlyDuckOwner(uint256 _tokenId) {
+        require(_msgSender() == s.ducks[_tokenId].owner, "LibApAccessControl: Only Duck owner can call this function");
+        _;
+    }
+
+    modifier onlyUnlocked(uint256 _tokenId) {
+        require(s.ducks[_tokenId].locked == false, "LibAppStorage: Only callable on unlocked Duck");
+        _;
+    }
+
+    modifier onlyLocked(uint256 _tokenId) {
+        require(s.ducks[_tokenId].locked == true, "LibAppStorage: Only callable on locked Duck");
+        _;
+    }
 }

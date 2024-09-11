@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
 
-import {NUMERIC_TRAITS_NUM} from "../libs/LibAppStorage.sol";
-
+import {NUMERIC_TRAITS_NUM} from "./Structs_Ducks.sol";
 
 struct MetaTxContextStorage {
     address trustedForwarder;
@@ -24,7 +23,8 @@ struct CollateralTypeInfo {
     bytes3 cheekColor;
     uint8 svgId;
     uint8 eyeShapeSvgId;
-    //Current conversionRate for the price of this collateral in relation to 1 USD. Can be updated by the DAO
-    uint16 conversionRate;
+    // TODO: add conversion rate / dynamic collateral price
+    // //Current conversionRate for the price of this collateral in relation to 1 USD. Can be updated by the DAO
+    // uint16 conversionRate;
     bool delisted;
 }

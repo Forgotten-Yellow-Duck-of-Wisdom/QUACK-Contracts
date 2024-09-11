@@ -11,10 +11,9 @@ import {LibERC721} from "../libs/LibERC721.sol";
 import {LibString} from "../libs/LibString.sol";
 
 /**
- * Protocol Admin Facet - 
+ * Protocol Admin Facet -
  */
 contract ProtocolFacet is AccessControl {
-
     // // TODO : replace with actual addresses
     //     ///@notice Check all addresses relating to revenue deposits including the burn address
     // ///@return RevenueSharesIO A struct containing all addresses relating to revenue deposits
@@ -27,5 +26,4 @@ contract ProtocolFacet is AccessControl {
     function quackAddress() external view returns (address contract_) {
         contract_ = s.quackTokenAddress;
     }
-
 }
