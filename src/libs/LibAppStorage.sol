@@ -10,11 +10,9 @@ struct AppStorage {
     bool diamondInitialized;
     uint256 reentrancyStatus;
     MetaTxContextStorage metaTxContext;
-
     /////////////////// Global Protocol ///////////////////
     address treasuryAddress;
     address quackTokenAddress;
-
     /////////////////// Collateral ///////////////////
     // address of ERC20 tokens considered as collateral
     address[] collateralTypes;
@@ -24,7 +22,6 @@ struct AppStorage {
     mapping(address => CollateralTypeInfo) collateralTypeInfo;
     // cycleId => collateral addresses[]
     mapping(uint256 => address[]) cycleCollateralTypes;
-
     /////////////////// Chainlink-VRF ///////////////////
     /// NEW VRF 2.5
     // @dev: unused atm, vrf used directly in duck struct/character
@@ -35,11 +32,9 @@ struct AppStorage {
     uint32 vrfCallbackGasLimit;
     uint16 vrfRequestConfirmations;
     uint32 vrfNumWords;
-
     /////////////////// Ducks - Cycles ///////////////////
     uint16 currentCycleId;
     mapping(uint256 => Cycle) cycles;
-
     /////////////////// Ducks - (ERC721) ///////////////////
     // global duck collection info
     string name;

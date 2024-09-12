@@ -14,6 +14,11 @@ struct RevenueSharesDTO {
     address codHash;
 }
 
+struct CollateralTypeDTO {
+    address collateralType;
+    CollateralTypeInfo collateralTypeInfo;
+}
+
 struct CollateralTypeInfo {
     // treated as an arary of int8
     //Trait modifiers for each collateral. Can be 2, 1, -1, or -2
