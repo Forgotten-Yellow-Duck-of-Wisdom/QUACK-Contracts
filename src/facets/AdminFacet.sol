@@ -12,4 +12,13 @@ import {LibString} from "../libs/LibString.sol";
 /**
  * Protocol Admin Facet -
  */
-contract AdminFacet is AccessControl {}
+contract AdminFacet is AccessControl {
+    function changeVrfParameters(uint32 _callbackGasLimit, uint16 _requestConfirmations, uint32 _numWords)
+        external
+        isAdmin
+    {
+        s.vrfCallbackGasLimit = _callbackGasLimit;
+        s.vrfRequestConfirmations = _requestConfirmations;
+        s.vrfNumWords = _numWords;
+    }
+}

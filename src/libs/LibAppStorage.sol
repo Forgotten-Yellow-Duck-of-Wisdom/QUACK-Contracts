@@ -3,7 +3,7 @@ pragma solidity >=0.8.21;
 
 import {MetaTxContextStorage, CollateralTypeInfo} from "../shared/Structs.sol";
 import {Cycle, DuckInfo} from "../shared/Structs_Ducks.sol";
-import {ILink} from "../interfaces/ILink.sol";
+import {VRFV2PlusWrapperInterface} from "../interfaces/IVRFV2PlusWrapperInterface.sol";
 
 struct AppStorage {
     /////////////////// Global Diamond ///////////////////
@@ -13,8 +13,8 @@ struct AppStorage {
     /////////////////// Global Protocol ///////////////////
     address treasuryAddress;
     address quackTokenAddress;
-    // 
-    address wrapperAddress; 
+    //
+    address wrapperAddress;
     /////////////////// Collateral ///////////////////
     // address of ERC20 tokens considered as collateral
     address[] collateralTypes;
@@ -25,12 +25,23 @@ struct AppStorage {
     // cycleId => collateral addresses[]
     mapping(uint256 => address[]) cycleCollateralTypes;
     /////////////////// Chainlink-VRF ///////////////////
-    mapping(bytes32 => uint256) vrfRequestIdToTokenId;
-    mapping(bytes32 => uint256) vrfNonces;
-    bytes32 keyHash;
-    uint144 fee;
-    address vrfCoordinator;
-    ILink link;
+    // OLD VRF
+    // mapping(bytes32 => uint256) vrfRequestIdToTokenId;
+    // mapping(bytes32 => uint256) vrfNonces;
+    // bytes32 keyHash;
+    // uint144 fee;
+    // address vrfCoordinator;
+    // ILink link;
+
+    /// NEW VRF 2.5
+    VRFV2PlusWrapperInterface chainlink_vrf_wrapper;
+    mapping(uint256 => uint256) vrfRequestIdToTokenId;
+    // @dev: unused atm, vrf used directly in duck struct/character
+    // mapping(uint256 => VRFRequest) vrfRequests;
+    // uint256[] vrfRequestIds;
+    uint32 vrfCallbackGasLimit;
+    uint16 vrfRequestConfirmations;
+    uint32 vrfNumWords;
     /////////////////// Ducks - Cycles ///////////////////
     uint16 currentCycleId;
     mapping(uint256 => Cycle) cycles;

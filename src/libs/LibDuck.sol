@@ -118,7 +118,7 @@ library LibDuck {
         require(!s.duckNamesUsed[lowerName], "DuckGameFacet: Duck name used already");
         s.duckNamesUsed[lowerName] = true;
         s.ducks[_tokenId].name = _name;
-        // TODO : wip events    
+        // TODO : wip events
         // emit SetDuckName(_tokenId, existingName, _name);
     }
     ///////////////////////////////////////////

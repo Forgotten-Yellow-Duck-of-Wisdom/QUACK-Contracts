@@ -28,3 +28,10 @@ struct CollateralTypeInfo {
     // uint16 conversionRate;
     bool delisted;
 }
+
+// @dev: unused atm, vrf used directly in duck struct/character
+// struct VRFRequest {
+//     uint256 paid;
+//     bool fulfilled;
+//     uint256[] randomWords;
+// }
