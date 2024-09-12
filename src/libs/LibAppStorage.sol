@@ -13,6 +13,8 @@ struct AppStorage {
     /////////////////// Global Protocol ///////////////////
     address treasuryAddress;
     address quackTokenAddress;
+    // 
+    address wrapperAddress; 
     /////////////////// Collateral ///////////////////
     // address of ERC20 tokens considered as collateral
     address[] collateralTypes;
