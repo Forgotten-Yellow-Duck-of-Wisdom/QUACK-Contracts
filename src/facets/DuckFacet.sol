@@ -19,7 +19,7 @@ contract DuckFacet is AccessControl {
      * @return totalSupply_ The aggregate count of all NFTs ever created
      */
     function totalSupply() external view returns (uint256 totalSupply_) {
-        totalSupply_ = s.ducksIds.length;
+        totalSupply_ = s.duckIds.length;
     }
 
     /**
@@ -59,8 +59,8 @@ contract DuckFacet is AccessControl {
      * @return tokenId_ The unique identifier of the NFT at the specified index
      */
     function tokenByIndex(uint256 _index) external view returns (uint256 tokenId_) {
-        require(_index < s.ducksIds.length, "DuckFacet: index beyond supply");
-        tokenId_ = s.ducksIds[_index];
+        require(_index < s.duckIds.length, "DuckFacet: index beyond supply");
+        tokenId_ = s.duckIds[_index];
     }
 
     /**
@@ -128,7 +128,7 @@ contract DuckFacet is AccessControl {
      * @return approved_ The currently approved address for this NFT, or the zero address if there is none
      */
     function getApproved(uint256 _tokenId) external view returns (address approved_) {
-        require(_tokenId < s.ducksIds.length, "ERC721: tokenId is invalid");
+        require(_tokenId < s.duckIds.length, "ERC721: tokenId is invalid");
         approved_ = s.approved[_tokenId];
     }
 

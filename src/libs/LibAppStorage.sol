@@ -10,11 +10,11 @@ struct AppStorage {
     bool diamondInitialized;
     uint256 reentrancyStatus;
     MetaTxContextStorage metaTxContext;
+
     /////////////////// Global Protocol ///////////////////
     address treasuryAddress;
     address quackTokenAddress;
-    //
-    address wrapperAddress;
+
     /////////////////// Collateral ///////////////////
     // address of ERC20 tokens considered as collateral
     address[] collateralTypes;
@@ -24,27 +24,22 @@ struct AppStorage {
     mapping(address => CollateralTypeInfo) collateralTypeInfo;
     // cycleId => collateral addresses[]
     mapping(uint256 => address[]) cycleCollateralTypes;
-    /////////////////// Chainlink-VRF ///////////////////
-    // OLD VRF
-    // mapping(bytes32 => uint256) vrfRequestIdToTokenId;
-    // mapping(bytes32 => uint256) vrfNonces;
-    // bytes32 keyHash;
-    // uint144 fee;
-    // address vrfCoordinator;
-    // ILink link;
 
+    /////////////////// Chainlink-VRF ///////////////////
     /// NEW VRF 2.5
-    VRFV2PlusWrapperInterface chainlink_vrf_wrapper;
-    mapping(uint256 => uint256) vrfRequestIdToTokenId;
     // @dev: unused atm, vrf used directly in duck struct/character
     // mapping(uint256 => VRFRequest) vrfRequests;
     // uint256[] vrfRequestIds;
+    VRFV2PlusWrapperInterface chainlink_vrf_wrapper;
+    mapping(uint256 => uint256) vrfRequestIdToTokenId;
     uint32 vrfCallbackGasLimit;
     uint16 vrfRequestConfirmations;
     uint32 vrfNumWords;
+
     /////////////////// Ducks - Cycles ///////////////////
     uint16 currentCycleId;
     mapping(uint256 => Cycle) cycles;
+
     /////////////////// Ducks - (ERC721) ///////////////////
     // global duck collection info
     string name;
@@ -54,7 +49,7 @@ struct AppStorage {
     string baseUri;
     // id equal total Duck supply
     uint256 duckIdCounter;
-    uint32[] ducksIds;
+    uint32[] duckIds;
     // name => current status
     mapping(string => bool) duckNamesUsed;
     mapping(uint32 => uint256) ducksRespecCount;

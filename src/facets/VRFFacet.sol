@@ -16,32 +16,30 @@ contract VrfFacet is AccessControl {
         return s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit);
     }
 
-    // TODO : add payment in native token
-    function openEggs(uint256[] calldata _tokenIds) external {
+    function openEggs(uint256[] calldata _tokenIds) external payable {
         address owner = _msgSender();
+        uint256 requestPrice = s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit);
+        require(msg.value >= requestPrice * _tokenIds.length, "VRFFacet: Not enough native funds for chainlink VRF");
         for (uint256 i; i < _tokenIds.length; i++) {
             uint256 tokenId = _tokenIds[i];
             require(s.ducks[tokenId].status == DuckStatus.CLOSED_EGG, "VRFFacet: Egg is not closed");
             require(owner == s.ducks[tokenId].owner, "VRFFacet: Only duck owner can egg a portal");
             require(s.ducks[tokenId].locked == false, "VRFFacet: Can't egg portal when it is locked");
-            requestRandomWords(tokenId);
+            requestRandomWords(tokenId, requestPrice);
         }
         emit OpenEggs(_tokenIds);
     }
 
 
 
-    function requestRandomWords(uint256 _tokenId) internal returns (uint256 requestId) {
+    function requestRandomWords(uint256 _tokenId, uint256 _requestPrice) internal returns (uint256 requestId) {
         s.ducks[_tokenId].status = DuckStatus.VRF_PENDING;
         
-
-        uint256 requestPrice = s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit);
-        (requestId,) = s.chainlink_vrf_wrapper.requestRandomWordsInNative{value: requestPrice}(
+        (requestId,) = s.chainlink_vrf_wrapper.requestRandomWordsInNative{value: _requestPrice}(
         s.vrfCallbackGasLimit,
         s.vrfRequestConfirmations,
         s.vrfNumWords
       );
-
 
         // s.vrfRequests[requestId] = RequestStatus({
         //     paid: requestPrice, 
