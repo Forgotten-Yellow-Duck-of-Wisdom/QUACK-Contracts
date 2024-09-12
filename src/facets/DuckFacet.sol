@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
 
-import {Cycle, DuckInfoMemory} from "../shared/Structs_Ducks.sol";
+import {Cycle, DuckInfoDTO} from "../shared/Structs_Ducks.sol";
 import {LibDuck} from "../libs/LibDuck.sol";
 import {IDuckFacet} from "../interfaces/IDuckFacet.sol";
 import {AccessControl} from "../shared/AccessControl.sol";
@@ -38,7 +38,7 @@ contract DuckFacet is AccessControl {
      * @param _tokenId The unique identifier of the NFT
      * @return duckInfo_ A struct encapsulating all relevant details of the NFT
      */
-    function getDuckInfo(uint256 _tokenId) external view returns (DuckInfoMemory memory duckInfo_) {
+    function getDuckInfo(uint256 _tokenId) external view returns (DuckInfoDTO memory duckInfo_) {
         duckInfo_ = LibDuck.getDuckInfo(_tokenId);
     }
 
@@ -89,9 +89,9 @@ contract DuckFacet is AccessControl {
      * @param _owner The address to query
      * @return ducksInfos_ An array of structs, each containing comprehensive details of an owned NFT
      */
-    function allDucksInfosOfOwner(address _owner) external view returns (DuckInfoMemory[] memory ducksInfos_) {
+    function allDucksInfosOfOwner(address _owner) external view returns (DuckInfoDTO[] memory ducksInfos_) {
         uint256 length = s.ownerDuckIds[_owner].length;
-        ducksInfos_ = new DuckInfoMemory[](length);
+        ducksInfos_ = new DuckInfoDTO[](length);
         for (uint256 i; i < length; i++) {
             ducksInfos_[i] = LibDuck.getDuckInfo(s.ownerDuckIds[_owner][i]);
         }

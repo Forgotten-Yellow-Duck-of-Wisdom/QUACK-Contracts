@@ -74,7 +74,7 @@ struct DuckInfo {
 /// MARK: Memory structs (DTO)
 /////////////////////////////////
 
-struct DuckInfoMemory {
+struct DuckInfoDTO {
     uint256 tokenId;
     string name;
     address owner;

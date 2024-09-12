@@ -23,11 +23,11 @@ struct CollateralTypeInfo {
     // treated as an arary of int8
     //Trait modifiers for each collateral. Can be 2, 1, -1, or -2
     int16[NUMERIC_TRAITS_NUM] modifiers;
-    bytes3 primaryColor;
-    bytes3 secondaryColor;
-    bytes3 cheekColor;
-    uint8 svgId;
-    uint8 eyeShapeSvgId;
+    // bytes3 primaryColor;
+    // bytes3 secondaryColor;
+    // bytes3 cheekColor;
+    // uint8 svgId;
+    // uint8 eyeShapeSvgId;
     // TODO: add conversion rate / dynamic collateral price
     // //Current conversionRate for the price of this collateral in relation to 1 USD. Can be updated by the DAO
     // uint16 conversionRate;

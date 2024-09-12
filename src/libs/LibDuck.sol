@@ -3,7 +3,7 @@ pragma solidity >=0.8.21;
 
 import {
     DuckInfo,
-    DuckInfoMemory,
+    DuckInfoDTO,
     EggDuckTraitsDTO,
     DuckStatus,
     NUMERIC_TRAITS_NUM,
@@ -125,7 +125,7 @@ library LibDuck {
     // MARK: Getters
     ///////////////////////////////////////////
 
-    function getDuckInfo(uint256 _tokenId) internal view returns (DuckInfoMemory memory duckInfo_) {
+    function getDuckInfo(uint256 _tokenId) internal view returns (DuckInfoDTO memory duckInfo_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         duckInfo_.tokenId = _tokenId;
         duckInfo_.owner = s.ducks[_tokenId].owner;
