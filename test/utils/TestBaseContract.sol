@@ -7,6 +7,7 @@ import {DiamondProxy} from "src/generated/DiamondProxy.sol";
 import {IDiamondProxy} from "src/generated/IDiamondProxy.sol";
 import {LibDiamondHelper} from "src/generated/LibDiamondHelper.sol";
 import {InitDiamond} from "src/init/InitDiamond.sol";
+import {IERC20} from "src/interfaces/IERC20.sol";
 
 abstract contract TestBaseContract is Test {
     address public immutable account0 = address(this);
@@ -14,6 +15,8 @@ abstract contract TestBaseContract is Test {
     address public account2;
 
     IDiamondProxy public diamond;
+
+    IERC20 public quackToken;
 
     function setUp() public virtual {
         console2.log("\n -- Test Base\n");
@@ -26,6 +29,8 @@ abstract contract TestBaseContract is Test {
         vm.label(account1, "Account 1");
         account2 = vm.addr(2);
         vm.label(account2, "Account 2");
+
+        quackToken = IERC20(0x0000000000000000000000000000000000000000);
 
         console2.log("Deploy diamond");
         diamond = IDiamondProxy(address(new DiamondProxy(account0)));

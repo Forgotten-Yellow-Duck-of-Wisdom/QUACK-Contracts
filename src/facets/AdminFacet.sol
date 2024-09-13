@@ -32,7 +32,7 @@ contract AdminFacet is AccessControl {
     ///@param _cycleMaxSize The maximum number of portals in the new cycle
     ///@param _eggsPrice The base price of portals in the new cycle(in $QUACK)
     ///@param _bodyColorItemId The universal itemId of the body color applied to NFTs in the new cycle
-    function createCycle(uint24 _cycleMaxSize, uint96 _eggsPrice, uint256 _bodyColorItemId)
+    function createCycle(uint24 _cycleMaxSize, uint256 _eggsPrice, uint256 _bodyColorItemId)
         external
         isAdmin
         returns (uint256 cycleId_)
@@ -70,7 +70,6 @@ contract AdminFacet is AccessControl {
             newCollateralTypeInfo.primaryColor = _collateralTypes[i].primaryColor;
             newCollateralTypeInfo.secondaryColor = _collateralTypes[i].secondaryColor;
             newCollateralTypeInfo.delisted = _collateralTypes[i].delisted;
-
 
             //then handle global collateralTypes array
             uint256 index = s.collateralTypeIndexes[newCollateralTypeAddress];

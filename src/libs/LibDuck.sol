@@ -9,6 +9,7 @@ import {
     DuckCharacteristicsType,
     DuckStatisticsType
 } from "../shared/Structs_Ducks.sol";
+import {CollateralTypeInfo} from "../shared/Structs.sol";
 import {AppStorage, LibAppStorage} from "./LibAppStorage.sol";
 import {IERC20} from "../interfaces/IERC20.sol";
 import {CollateralEscrow} from "../facades/CollateralEscrow.sol";
@@ -20,8 +21,19 @@ import {LibMaths} from "./LibMaths.sol";
 // error ERC20NotEnoughBalance(address sender);
 
 library LibDuck {
-
     event DuckInteract(uint256 indexed _tokenId, uint256 kinship);
+
+    function purchase(address _from, uint256 _quackAmount) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        uint256 share = (_quackAmount * 25) / 100;
+
+        // Using 0x000000000000000000000000000000000000dEaD  as burn address.
+        address quackTokenAddress = s.quackTokenAddress;
+        LibERC20.safeTransferFrom(quackTokenAddress, _from, address(0x000000000000000000000000000000000000dEaD ), share);
+        LibERC20.safeTransferFrom(quackTokenAddress, _from, s.treasuryAddress, share);
+        LibERC20.safeTransferFrom(quackTokenAddress, _from, s.farmingAddress, share);
+        LibERC20.safeTransferFrom(quackTokenAddress, _from, s.daoAddress, share);
+    }
 
     function internalTransferFrom(address _sender, address _from, address _to, uint256 _tokenId) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
@@ -247,11 +259,7 @@ library LibDuck {
         rarityScore_ = baseRarity + wearableBonus;
     }
 
-    function getDuckCharacteristics(uint256 _tokenId)
-        internal
-        view
-        returns (int16[] memory characteristics_)
-    {
+    function getDuckCharacteristics(uint256 _tokenId) internal view returns (int16[] memory characteristics_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         //Check if trait boosts from consumables are still valid
         int256 boostDecay = int256((block.timestamp - s.ducks[_tokenId].lastTemporaryBoost) / 24 hours);
@@ -296,8 +304,9 @@ library LibDuck {
         singleEggDuckTraits_.randomNumber = randomNumberN;
 
         address collateralType =
-            s.cycleCollateralTypes[_cycleId][randomNumberN % s.cycleCollateralTypes[_cycleId].length];            
-        singleEggDuckTraits_.characteristics = LibMaths.calculateCharacteristics(randomNumberN, s.collateralTypeInfo[collateralType], _cycleId);
+            s.cycleCollateralTypes[_cycleId][randomNumberN % s.cycleCollateralTypes[_cycleId].length];
+        singleEggDuckTraits_.characteristics =
+            LibMaths.calculateCharacteristics(randomNumberN, s.collateralTypeInfo[collateralType], _cycleId);
         singleEggDuckTraits_.collateralType = collateralType;
 
         // TODO : wip dynamic collateral price
@@ -382,38 +391,49 @@ library LibDuck {
     /////////////////////////////////////////////////////////////////////////////////
 
     function getCharacteristicsArray(DuckInfo storage duckInfo) internal view returns (int16[] memory) {
-    uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
-    int16[] memory characteristicsArray = new int16[](characteristicsCount);
+        uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
+        int16[] memory characteristicsArray = new int16[](characteristicsCount);
 
-    for (uint16 i = 0; i < characteristicsCount; i++) {
-        characteristicsArray[i] = duckInfo.characteristics[i];
+        for (uint16 i = 0; i < characteristicsCount; i++) {
+            characteristicsArray[i] = duckInfo.characteristics[i];
+        }
+
+        return characteristicsArray;
     }
 
-    return characteristicsArray;
-}
+    function getModifiersArray(CollateralTypeInfo storage collateral) internal view returns (int16[] memory) {
+        uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
+        int16[] memory modifiersArray = new int16[](characteristicsCount);
+
+        for (uint16 i = 0; i < characteristicsCount; i++) {
+            modifiersArray[i] = collateral.modifiers[i];
+        }
+
+        return modifiersArray;
+    }
 
     function getStatisticsArray(DuckInfo storage duckInfo) internal view returns (int16[] memory) {
-    uint256 statisticsCount = uint256(type(DuckStatisticsType).max) + 1;
-    int16[] memory statisticsArray = new int16[](statisticsCount);
+        uint256 statisticsCount = uint256(type(DuckStatisticsType).max) + 1;
+        int16[] memory statisticsArray = new int16[](statisticsCount);
 
-    for (uint16 i = 0; i < statisticsCount; i++) {
-        statisticsArray[i] = duckInfo.statistics[i];
+        for (uint16 i = 0; i < statisticsCount; i++) {
+            statisticsArray[i] = duckInfo.statistics[i];
+        }
+
+        return statisticsArray;
     }
-
-    return statisticsArray;
-}
 
     function getEquippedWearablesArray(DuckInfo storage duckInfo) internal view returns (uint256[] memory) {
-    // TODO : set total equipped wearable count
-    // uint256 wearableCount = uint256(type(DuckCharacteristicsType).max) + 1;
-    uint256 wearableCount = 16;
+        // TODO : set total equipped wearable count
+        // uint256 wearableCount = uint256(type(DuckCharacteristicsType).max) + 1;
+        uint256 wearableCount = 16;
 
-    uint256[] memory wearablesArray = new uint256[](wearableCount);
+        uint256[] memory wearablesArray = new uint256[](wearableCount);
 
-    for (uint16 i = 0; i < wearableCount; i++) {
-        wearablesArray[i] = duckInfo.equippedWearables[i];
+        for (uint16 i = 0; i < wearableCount; i++) {
+            wearablesArray[i] = duckInfo.equippedWearables[i];
+        }
+
+        return wearablesArray;
     }
-
-    return wearablesArray;
-}
 }

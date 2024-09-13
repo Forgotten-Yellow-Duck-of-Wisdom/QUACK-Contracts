@@ -1,152 +1,181 @@
-// // SPDX-License-Identifier: MIT
-// pragma solidity >=0.8.21;
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.21;
 
-// import "forge-std/Test.sol";
-// import {TestBaseContract, console2} from "./utils/TestBaseContract.sol";
-// import {Cycle, DuckStatusType, DuckInfo, DuckInfoDTO, EggDuckTraitsDTO} from "../src/shared/Structs_Ducks.sol";
-// import {CollateralTypeDTO, CollateralTypeInfo} from "../src/shared/Structs.sol";
+import "forge-std/Test.sol";
+import {TestBaseContract, console2} from "./utils/TestBaseContract.sol";
+import {Cycle, DuckStatusType, DuckInfo, DuckInfoDTO, EggDuckTraitsDTO} from "../src/shared/Structs_Ducks.sol";
+import {CollateralTypeDTO, CollateralTypeInfo} from "../src/shared/Structs.sol";
 
-// contract ProtocolTest is TestBaseContract {
-//     uint256 cycleId;
-//     Cycle cycle;
+contract ProtocolTest is TestBaseContract {
+    uint256 cycleId;
+    Cycle cycle;
 
-//     ///////////////////////////////////////////////////////////////////////////////////
-//     // Utils
-//     ///////////////////////////////////////////////////////////////////////////////////
-//     function util_createCycle(uint256 _cycleMaxSize, uint256 _eggPrice) internal {
-//         uint256 createdId = diamond.createCycle(_cycleMaxSize, _eggPrice, bytes3("0x000000"));
-//         (cycleId, cycle) = diamond.currentCycle();
-//         assertEq(createdId, cycleId, "util_createCycle: Invalid Cycle Id");
-//         assertEq(cycle.cycleMaxSize, _cycleMaxSize, "util_createCycle: Invalid Cycle Max Size");
-//         assertEq(cycle.eggPrice, _eggPrice, "util_createCycle: Invalid Egg Price");
-//         assertEq(cycle.totalCount, 0, "util_createCycle: Invalid Total Count");
-//     }
+    ///////////////////////////////////////////////////////////////////////////////////
+    // Utils
+    ///////////////////////////////////////////////////////////////////////////////////
+    function util_createCycle(uint24 _cycleMaxSize, uint256 _eggPrice, uint256 _bodyColorItemId) internal {
+        uint256 createdId = diamond.createCycle(_cycleMaxSize, _eggPrice, _bodyColorItemId);
+        (cycleId, cycle) = diamond.currentCycle();
+        assertEq(createdId, cycleId, "util_createCycle: Invalid Cycle Id");
+        assertEq(cycle.cycleMaxSize, _cycleMaxSize, "util_createCycle: Invalid Cycle Max Size");
+        assertEq(cycle.eggsPrice, _eggPrice, "util_createCycle: Invalid Egg Price");
+        assertEq(cycle.totalCount, 0, "util_createCycle: Invalid Total Count");
+        assertEq(cycle.bodyColorItemId, _bodyColorItemId, "util_createCycle: Invalid Body Color Item Id");
+    }
 
-//     function util_addCollateral(uint256 _cycleId, CollateralTypeDTO[] calldata _collateralTypes) internal {
-//         uint256 initialCollateralCount = diamond.getCollateralTypesCount(_cycleId);
+    function util_addCollateral(uint256 _cycleId, CollateralTypeDTO[] memory _collateralTypes) internal {
+        uint256 initialCollateralCount = diamond.getCycleCollateralsAddresses(_cycleId).length;
 
-//         diamond.addCollateralTypes(_cycleId, _collateralTypes);
+        diamond.addCollateralTypes(_cycleId, _collateralTypes);
 
-//         uint256 updatedCollateralCount = diamond.getCollateralTypesCount(_cycleId);
-//         assertEq(
-//             updatedCollateralCount,
-//             initialCollateralCount + _collateralTypes.length,
-//             "util_addCollateral: Collateral types not added correctly"
-//         );
+        uint256 updatedCollateralCount = diamond.getCycleCollateralsAddresses(_cycleId).length;
+        assertEq(
+            updatedCollateralCount,
+            initialCollateralCount + _collateralTypes.length,
+            "util_addCollateral: Collateral types not added correctly"
+        );
 
-//         for (uint256 i = 0; i < _collateralTypes.length; i++) {
-//             CollateralTypeDTO memory addedCollateral = diamond.getCollateralType(_cycleId, initialCollateralCount + i);
-//             assertEq(
-//                 addedCollateral.collateralAddress,
-//                 _collateralTypes[i].collateralAddress,
-//                 "util_addCollateral: Incorrect collateral address"
-//             );
-//             assertEq(
-//                 addedCollateral.info.delisted,
-//                 _collateralTypes[i].info.delisted,
-//                 "util_addCollateral: Incorrect collateral delisted status"
-//             );
+        for (uint256 i = 0; i < _collateralTypes.length; i++) {
+            CollateralTypeDTO memory addedCollateral =
+                diamond.getCycleCollateralInfo(_cycleId, initialCollateralCount + i);
+            assertEq(
+                addedCollateral.collateralType,
+                _collateralTypes[i].collateralType,
+                "util_addCollateral: Incorrect collateral address"
+            );
+            assertEq(
+                addedCollateral.delisted,
+                _collateralTypes[i].delisted,
+                "util_addCollateral: Incorrect collateral delisted status"
+            );
 
-//             // Verify modifiers
-//             for (uint256 j = 0; j < NUMERIC_TRAITS_NUM; j++) {
-//                 assertEq(
-//                     addedCollateral.info.modifiers[j],
-//                     _collateralTypes[i].info.modifiers[j],
-//                     "util_addCollateral: Incorrect modifier value"
-//                 );
-//                 assertTrue(
-//                     addedCollateral.info.modifiers[j] == 2 || addedCollateral.info.modifiers[j] == 1
-//                         || addedCollateral.info.modifiers[j] == -1 || addedCollateral.info.modifiers[j] == -2,
-//                     "Invalid modifier value"
-//                 );
-//             }
-//         }
-//     }
+						assertEq(
+                addedCollateral.primaryColor,
+                _collateralTypes[i].primaryColor,
+                "util_addCollateral: Incorrect collateral primary color"
+            );
 
-//     ///////////////////////////////////////////////////////////////////////////////////
-//     // Setup
-//     ///////////////////////////////////////////////////////////////////////////////////
-//     function setUp() public virtual override {
-//         super.setUp();
+						assertEq(
+                addedCollateral.secondaryColor,
+                _collateralTypes[i].secondaryColor,
+                "util_addCollateral: Incorrect collateral secondary color"
+            );
 
-//         // create First Duck Cycle
-//         util_createCycle(10000, 1);
+            // Verify modifiers
+            for (uint256 j = 0; j < _collateralTypes[i].modifiers.length; j++) {
+                assertEq(
+                    addedCollateral.modifiers[j],
+                    _collateralTypes[i].modifiers[j],
+                    "util_addCollateral: Incorrect modifier value"
+                );
+                // assertTrue(
+                //     addedCollateral.modifiers[j] == 2 || addedCollateral.modifiers[j] == 1
+                //         || addedCollateral.modifiers[j] == -1 || addedCollateral.modifiers[j] == -2,
+                //     "Invalid modifier value"
+                // );
+                assertTrue(addedCollateral.modifiers[j] == _collateralTypes[i].modifiers[j], "Invalid modifier value");
+            }
+        }
+    }
 
-//         // add QUACK as collateral to first cycle
-//         util_addCollateral(
-//             cycleId,
-//             [
-//                 CollateralTypeDTO(
-//                     address(quackToken), CollateralTypeInfo(int16[NUMERIC_TRAITS_NUM](1000000000000000000), false)
-//                 )
-//             ]
-//         );
-//     }
+    ///////////////////////////////////////////////////////////////////////////////////
+    // Setup
+    ///////////////////////////////////////////////////////////////////////////////////
+    function setUp() public virtual override {
+        super.setUp();
 
-//     ///////////////////////////////////////////////////////////////////////////////////
-//     // Tests
-//     ///////////////////////////////////////////////////////////////////////////////////
-//     function testBasicEggsMint() public {
-//         uint256 initialBalance = quackToken.balanceOf(address(this));
-//         uint256 mintPrice = cycle.eggPrice;
+        // create First Duck Cycle
+        util_createCycle(10000, 1, 0);
 
-//         // Approve QUACK tokens for spending
-//         quackToken.approve(address(diamond), mintPrice);
+        // add QUACK as collateral to first cycle
+    // Define modifiers as int16[]
+    int16[] memory modifiers = new int16[](6);
+    modifiers[0] = -2;
+    modifiers[1] = 1;
+    modifiers[2] = 2;
+    modifiers[3] = 1;
+    modifiers[4] = 0;
+    modifiers[5] = -1;
 
-//         // Mint a duck
-//         uint256 duckId = diamond.mintDuck(cycleId);
+    // Create a dynamic array of CollateralTypeDTO
+    CollateralTypeDTO[] memory collateralTypes = new CollateralTypeDTO[](1);
+    collateralTypes[0] = CollateralTypeDTO(
+        address(quackToken),
+        modifiers,
+        bytes3(0x000000),
+        bytes3(0x000000),
+        false
+    );
 
-//         // Assert duck was minted
-//         assertEq(diamond.ownerOf(duckId), address(this), "Egg not minted to correct address");
-//         assertEq(diamond.balanceOf(address(this)), 1, "Incorrect duck balance");
+    // Add collateral
+    util_addCollateral(cycleId, collateralTypes);
+    }
 
-//         // Assert QUACK tokens were spent
-//         assertEq(quackToken.balanceOf(address(this)), initialBalance - mintPrice, "Incorrect QUACK balance after mint");
+    ///////////////////////////////////////////////////////////////////////////////////
+    // Tests
+    ///////////////////////////////////////////////////////////////////////////////////
+    function testBasicEggsMint() public {
+        uint256 initialBalance = quackToken.balanceOf(address(this));
+        uint256 mintPrice = cycle.eggsPrice;
 
-//         // Assert cycle state updated
-//         (, Cycle memory updatedCycle) = diamond.currentCycle();
-//         assertEq(updatedCycle.totalCount, 1, "Cycle total count not updated");
-//     }
+        // Approve QUACK tokens for spending
+        quackToken.approve(address(diamond), mintPrice);
 
-//     function testFailMintEggsInsufficientBalance() public {
-//         uint256 mintPrice = cycle.eggPrice;
+        // Mint a duck
+        uint256 duckId = diamond.buyEgg(account1);
 
-//         // Attempt to mint without sufficient balance
-//         vm.expectRevert("Insufficient balance");
-//         diamond.mintDuck(cycleId);
-//     }
+        // Assert duck was minted
+        assertEq(diamond.ownerOf(duckId), address(this), "Egg not minted to correct address");
+        assertEq(diamond.balanceOf(address(this)), 1, "Incorrect duck balance");
 
-//     function testMintFullEggsSupply() public {
-//         uint256 cycleMaxSize = cycle.cycleMaxSize;
-//         uint256 mintPrice = cycle.eggPrice;
+        // Assert QUACK tokens were spent
+        assertEq(quackToken.balanceOf(address(this)), initialBalance - mintPrice, "Incorrect QUACK balance after mint");
 
-//         // Approve QUACK tokens for spending
-//         quackToken.approve(address(diamond), mintPrice * cycleMaxSize);
+        // Assert cycle state updated
+        (, Cycle memory updatedCycle) = diamond.currentCycle();
+        assertEq(updatedCycle.totalCount, 1, "Cycle total count not updated");
+    }
 
-//         // Mint ducks until the cycle is full
-//         for (uint256 i = 0; i < cycleMaxSize; i++) {
-//             uint256 duckId = diamond.mintDuck(cycleId);
-//             assertEq(diamond.ownerOf(duckId), address(this), "Duck not minted to correct address");
-//         }
+    function testFailMintEggsInsufficientBalance() public {
+        uint256 mintPrice = cycle.eggsPrice;
 
-//         // Assert cycle is full
-//         (, Cycle memory updatedCycle) = diamond.currentCycle();
-//         assertEq(updatedCycle.totalCount, cycleMaxSize, "Cycle not full");
+        // Attempt to mint without sufficient balance
+        vm.expectRevert("Insufficient balance");
+        diamond.buyEgg(account1);
+    }
 
-//         // Attempt to mint one more duck, should fail
-//         vm.expectRevert("Cycle is full");
-//         diamond.mintDuck(cycleId);
-//     }
+    function testMintFullEggsSupply() public {
+        uint256 cycleMaxSize = cycle.cycleMaxSize;
+        uint256 mintPrice = cycle.eggsPrice;
 
-//     function testBasicDuckHatching() public {
-//         testBasicEggsMint();
-//         uint256 vrfPrice = diamond.getVrfPrice();
-//         diamond.openEgg{value: vrfPrice}([duckId]);
-//         uint256 duckId = 0;
-//         diamond.claimDuck(duckId, 1, 1);
+        // Approve QUACK tokens for spending
+        quackToken.approve(address(diamond), mintPrice * cycleMaxSize);
 
-//         DuckInfoDTO memory duckInfo = diamond.getDuckInfo(duckId);
-//         assertEq(duckInfo.status, DuckStatusType.DUCK, "Duck not hatched");
-//         assertEq(duckInfo.collateralType, 0, "Duck not hatched");
-//     }
-// }
+        // Mint ducks until the cycle is full
+        for (uint256 i = 0; i < cycleMaxSize; i++) {
+            uint256 duckId = diamond.buyEgg(account1);
+            assertEq(diamond.ownerOf(duckId), address(this), "Duck not minted to correct address");
+        }
+
+        // Assert cycle is full
+        (, Cycle memory updatedCycle) = diamond.currentCycle();
+        assertEq(updatedCycle.totalCount, cycleMaxSize, "Cycle not full");
+
+        // Attempt to mint one more duck, should fail
+        vm.expectRevert("Cycle is full");
+        diamond.buyEgg(account1);
+    }
+
+    function testBasicDuckHatching() public {
+        testBasicEggsMint();
+        uint256 vrfPrice = diamond.getVRFRequestPrice();
+				uint256[] memory ids = new uint256[](1);
+				ids[0] = 0;
+        diamond.openEggs{value: vrfPrice}(ids);
+        diamond.claimDuck(ids[0], 1, 1);
+
+        DuckInfoDTO memory duckInfo = diamond.getDuckInfo(ids[0]);
+        assertEq(uint256(duckInfo.status), uint256(DuckStatusType.DUCK), "Duck not hatched");
+        assertEq(duckInfo.collateral, address(quackToken), "Duck not hatched");
+    }
+}

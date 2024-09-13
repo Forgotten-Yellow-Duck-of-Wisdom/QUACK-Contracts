@@ -9,7 +9,16 @@ error DiamondAlreadyInitialized();
 contract InitDiamond {
     event InitializeDiamond(address sender);
 
-    function init() external {
+    function init(
+        address _quackTokenAddress,
+        address _treasuryAddress,
+        address _farmingAddress,
+        address _daoAddress,
+        address _chainlinkVrfWrapper,
+        uint32 _vrfCallbackGasLimit,
+        uint16 _vrfRequestConfirmations,
+        uint32 _vrfNumWords
+    ) external {
         AppStorage storage s = LibAppStorage.diamondStorage();
         if (s.diamondInitialized) {
             revert DiamondAlreadyInitialized();
@@ -20,10 +29,15 @@ contract InitDiamond {
         TODO: add custom initialization logic here
         */
 
-        s.chainlink_vrf_wrapper = VRFV2PlusWrapperInterface(0x6168499c0cFfCaCD319c818142124B7A15E857ab);
-        s.vrfCallbackGasLimit = 100000;
-        s.vrfRequestConfirmations = 3;
-        s.vrfNumWords = 1;
+        s.quackTokenAddress = _quackTokenAddress;
+        s.treasuryAddress = _treasuryAddress;
+        s.farmingAddress = _farmingAddress;
+        s.daoAddress = _daoAddress;
+
+        s.chainlink_vrf_wrapper = VRFV2PlusWrapperInterface(_chainlinkVrfWrapper);
+        s.vrfCallbackGasLimit = _vrfCallbackGasLimit;
+        s.vrfRequestConfirmations = _vrfRequestConfirmations;
+        s.vrfNumWords = _vrfNumWords;
 
         emit InitializeDiamond(msg.sender);
     }

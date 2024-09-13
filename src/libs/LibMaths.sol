@@ -5,9 +5,7 @@ pragma solidity >=0.8.21;
 import {DuckCharacteristicsType} from "../shared/Structs_Ducks.sol";
 import {CollateralTypeInfo} from "../shared/Structs.sol";
 
-
 library LibMaths {
-
     /// @notice Generates numeric traits for a duck based on a random number, modifiers, and cycle ID
     /// @dev Different algorithms are used for Cycle 1 and other cycles to create varied trait distributions
     /// @param _randomNumber A seed used to generate random trait values
@@ -47,11 +45,7 @@ library LibMaths {
     }
 
     //Calculates the base rarity score, including collateral modifier
-    function baseRarityScore(int16[] memory _characteristics)
-        internal
-        pure
-        returns (uint256 rarityScore_)
-    {
+    function baseRarityScore(int16[] memory _characteristics) internal pure returns (uint256 rarityScore_) {
         for (uint256 i; i < _characteristics.length; i++) {
             int256 number = _characteristics[i];
             if (number >= 50) {
@@ -62,11 +56,7 @@ library LibMaths {
         }
     }
 
-    function rarityMultiplier(int16[] memory _characteristics)
-        internal
-        pure
-        returns (uint256 multiplier_)
-    {
+    function rarityMultiplier(int16[] memory _characteristics) internal pure returns (uint256 multiplier_) {
         uint256 rarityScore = baseRarityScore(_characteristics);
         if (rarityScore < 300) return 10;
         else if (rarityScore >= 300 && rarityScore < 450) return 10;

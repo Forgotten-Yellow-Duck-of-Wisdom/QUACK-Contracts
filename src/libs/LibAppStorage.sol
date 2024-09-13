@@ -13,8 +13,11 @@ struct AppStorage {
     //
     /////////////////// Global Protocol ///////////////////
     //
-    address treasuryAddress;
     address quackTokenAddress;
+    address treasuryAddress;
+    address farmingAddress;
+    address daoAddress;
+    // Using 0x000000000000000000000000000000000000dEaD  as burn address.
     //
     /////////////////// Collateral ///////////////////
     //
@@ -53,8 +56,9 @@ struct AppStorage {
     // DB (or/and IPFS ?)
     string baseUri;
     // id equal total Duck supply
-    uint256 duckIdCounter;
+    uint32 duckIdCounter;
     uint32[] duckIds;
+    mapping(uint256 => uint256) duckIdIndexes;
     // name => current status
     mapping(string => bool) duckNamesUsed;
     mapping(uint32 => uint256) duckRespecCount;

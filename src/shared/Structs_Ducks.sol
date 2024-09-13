@@ -6,7 +6,7 @@ pragma solidity >=0.8.21;
 /////////////////////////////////
 
 enum DuckStatusType {
-    CLOSED_EGG,
+    CLOSED_EGGS,
     VRF_PENDING,
     OPEN_EGG,
     DUCK

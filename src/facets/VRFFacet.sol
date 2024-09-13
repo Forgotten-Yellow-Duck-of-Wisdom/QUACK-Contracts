@@ -7,7 +7,7 @@ import {LibAppStorage} from "../libs/LibAppStorage.sol";
 
 contract VrfFacet is AccessControl {
     event OpenEggs(uint256[] _tokenIds);
-    event EggsOpened(uint256 indexed tokenId);
+    event EggOpened(uint256 indexed tokenId);
     event RequestSent(uint256 requestId, uint32 numWords);
 
     function getVRFRequestPrice() external view returns (uint256) {
@@ -20,9 +20,9 @@ contract VrfFacet is AccessControl {
         require(msg.value >= requestPrice * _tokenIds.length, "VRFFacet: Not enough native funds for chainlink VRF");
         for (uint256 i; i < _tokenIds.length; i++) {
             uint256 tokenId = _tokenIds[i];
-            require(s.ducks[tokenId].status == DuckStatusType.CLOSED_EGG, "VRFFacet: Egg is not closed");
+            require(s.ducks[tokenId].status == DuckStatusType.CLOSED_EGGS, "VRFFacet: Eggs is not closed");
             require(owner == s.ducks[tokenId].owner, "VRFFacet: Only duck owner can open an egg");
-            require(s.ducks[tokenId].locked == false, "VRFFacet: Can't open egg when it is locked");
+            require(s.ducks[tokenId].locked == false, "VRFFacet: Can't open eggs when it is locked");
             requestRandomWords(tokenId, requestPrice);
         }
         emit OpenEggs(_tokenIds);
@@ -63,7 +63,7 @@ contract VrfFacet is AccessControl {
         s.ducks[tokenId].status = DuckStatusType.OPEN_EGG;
         s.eggIdToRandomNumber[tokenId] = _randomWords[0];
 
-        emit EggsOpened(tokenId);
+        emit EggOpened(tokenId);
     }
 
     receive() external payable {}
