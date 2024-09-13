@@ -46,10 +46,10 @@ contract DuckFacet is AccessControl {
      * @notice Retrieve the timestamp when an NFT was claimed
      * @dev Returns zero for unclaimed portals
      * @param _tokenId The unique identifier of the NFT
-     * @return claimTime_ The Unix timestamp of the NFT's claim
+     * @return hatchTime_ The Unix timestamp of the NFT's claim
      */
-    function duckClaimTime(uint256 _tokenId) external view returns (uint256 claimTime_) {
-        claimTime_ = s.ducks[_tokenId].claimTime;
+    function duckHatchTime(uint256 _tokenId) external view returns (uint256 hatchTime_) {
+        hatchTime_ = s.ducks[_tokenId].hatchTime;
     }
 
     /**

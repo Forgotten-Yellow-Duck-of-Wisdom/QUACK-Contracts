@@ -62,14 +62,14 @@ library LibString {
 
     function validateAndLowerName(string memory _name) internal pure returns (string memory) {
         bytes memory name = abi.encodePacked(_name);
-        uint256 len = name.length;
-        require(len != 0, "LibString: name can't be 0 chars");
-        require(len < 26, "LibString: name can't be greater than 25 characters");
+        uint256 length = name.length;
+        require(length != 0, "LibString: name can't be 0 chars");
+        require(length < 26, "LibString: name can't be greater than 25 characters");
         uint256 char = uint256(uint8(name[0]));
         require(char != 32, "LibString: first char of name can't be a space");
-        char = uint256(uint8(name[len - 1]));
+        char = uint256(uint8(name[length - 1]));
         require(char != 32, "LibString: last char of name can't be a space");
-        for (uint256 i; i < len; i++) {
+        for (uint256 i; i < length; i++) {
             char = uint256(uint8(name[i]));
             require(char > 31 && char < 127, "LibString: invalid character in Duck name.");
             if (char < 91 && char > 64) {

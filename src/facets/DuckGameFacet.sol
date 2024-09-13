@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
 
-import {Cycle, EggDuckTraitsDTO, DucksIdsWithKinshipDTO} from "../shared/Structs_Ducks.sol";
+import {Cycle, EggDuckTraitsDTO, DucksIdsWithKinshipDTO, DuckStatusType} from "../shared/Structs_Ducks.sol";
 import {LibDuck} from "../libs/LibDuck.sol";
 import {IDuckFacet} from "../interfaces/IDuckFacet.sol";
 import {AccessControl} from "../shared/AccessControl.sol";
@@ -9,11 +9,10 @@ import {LibAppStorage} from "../libs/LibAppStorage.sol";
 import {LibERC721} from "../libs/LibERC721.sol";
 import {LibString} from "../libs/LibString.sol";
 import {LibMaths} from "../libs/LibMaths.sol";
-// import {} from "../libs/LibAppStorage.sol";
+
 /**
  * Duck Game Facet -
  */
-
 contract DuckGameFacet is AccessControl {
     // TODO : 1 or more egg can be purchased ?
     ///@notice Allow an address to purchase a duck egg
@@ -84,7 +83,7 @@ contract DuckGameFacet is AccessControl {
     }
 
     // TODO: replace 10 hardcoded value with constant EGG_DUCKS_NUM
-    ///@notice Query all details associated with an NFT like collateralType,numericTraits e.t.c
+    ///@notice Query all details associated with an NFT like collateralType,characteristics e.t.c
     ///@param _tokenId Identifier of the NFT to query
     ///@return eggDuckTraits_ A struct containing all details about the NFT with identifier `_tokenId`
 
@@ -95,13 +94,9 @@ contract DuckGameFacet is AccessControl {
     ///@notice Query the numeric traits of an NFT
     ///@dev Only valid for claimed Ducks
     ///@param _tokenId The identifier of the NFT to query
-    ///@return numericTraits_ A six-element array containing integers,each representing the traits of the NFT with identifier `_tokenId`
-    function getNumericTraits(uint256 _tokenId)
-        external
-        view
-        returns (int16[NUMERIC_TRAITS_NUM] memory numericTraits_)
-    {
-        numericTraits_ = LibDuck.getNumericTraits(_tokenId);
+    ///@return characteristics_ An array containing integers,each representing the traits of the NFT with identifier `_tokenId`
+    function getDuckCharacteristics(uint256 _tokenId) external view returns (int16[] memory characteristics_) {
+        characteristics_ = LibDuck.getDuckCharacteristics(_tokenId);
     }
 
     ///@notice Query the skill reset count of an Duck
@@ -114,7 +109,7 @@ contract DuckGameFacet is AccessControl {
     ///@notice Query the available skill points that can be used for an NFT
     ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used
     ///@param _tokenId The identifier of the NFT to query
-    ///@return   An unsigned integer which represents the available skill points of an NFT with identifier `_tokenId`
+    ///@return availableSkillPoints_ An unsigned integer which represents the available skill points of an NFT with identifier `_tokenId`
     function availableSkillPoints(uint256 _tokenId) public view returns (uint256 availableSkillPoints_) {
         availableSkillPoints_ = LibDuck.availableSkillPoints(_tokenId);
     }
@@ -135,42 +130,44 @@ contract DuckGameFacet is AccessControl {
         requiredXp_ = LibDuck.xpUntilNextLevel(_experience);
     }
 
-    ///@notice Compute the rarity multiplier of an NFT
-    ///@dev Only valid for claimed Ducks
-    ///@param _numericTraits An array of six integers each representing a numeric trait of an NFT
-    ///return multiplier_ The rarity multiplier of an NFT with numeric traits `_numericTraits`
-    function rarityMultiplier(int16[NUMERIC_TRAITS_NUM] memory _numericTraits)
-        external
-        pure
-        returns (uint256 multiplier_)
-    {
-        multiplier_ = LibMaths.rarityMultiplier(_numericTraits);
-    }
+    // TODO : rework or fetch for global duck infos
+    // ///@notice Compute the rarity multiplier of an NFT
+    // ///@dev Only valid for claimed Ducks
+    // ///@param _characteristics An array of six integers each representing a numeric trait of an NFT
+    // ///return multiplier_ The rarity multiplier of an NFT with numeric traits `_characteristics`
+    // function rarityMultiplier(int16[NUMERIC_TRAITS_NUM] memory _characteristics)
+    //     external
+    //     pure
+    //     returns (uint256 multiplier_)
+    // {
+    //     multiplier_ = LibMaths.rarityMultiplier(_characteristics);
+    // }
 
-    ///@notice Calculates the base rarity score, including collateral modifier
-    ///@dev Only valid for claimed Ducks
-    ///@param _numericTraits An array of six integers each representing a numeric trait of an NFT
-    ///@return rarityScore_ The base rarity score of an NFT with numeric traits `_numericTraits`
-    function baseRarityScore(int16[NUMERIC_TRAITS_NUM] memory _numericTraits)
-        external
-        pure
-        returns (uint256 rarityScore_)
-    {
-        rarityScore_ = LibMaths.baseRarityScore(_numericTraits);
-    }
+    // TODO : rework or fetch for global duck infos
+    // ///@notice Calculates the base rarity score, including collateral modifier
+    // ///@dev Only valid for claimed Ducks
+    // ///@param _characteristics An array of six integers each representing a numeric trait of an NFT
+    // ///@return rarityScore_ The base rarity score of an NFT with numeric traits `_characteristics`
+    // function baseRarityScore(int16[NUMERIC_TRAITS_NUM] memory _characteristics)
+    //     external
+    //     pure
+    //     returns (uint256 rarityScore_)
+    // {
+    //     rarityScore_ = LibMaths.baseRarityScore(_characteristics);
+    // }
 
     ///@notice Check the modified traits and rarity score of an NFT(as a result of equipped wearables)
     ///@dev Only valid for claimed Ducks
     ///@param _tokenId Identifier of the NFT to query
-    ///@return numericTraits_ An array of six integers each representing a numeric trait(modified) of an NFT with identifier `_tokenId`
+    ///@return characteristics_ An array of six integers each representing a numeric trait(modified) of an NFT with identifier `_tokenId`
     ///@return rarityScore_ The modified rarity score of an NFT with identifier `_tokenId`
     //Only valid for claimed Ducks
-    function modifiedTraitsAndRarityScore(uint256 _tokenId)
+    function modifiedCharacteristicsAndRarityScore(uint256 _tokenId)
         external
         view
-        returns (int16[NUMERIC_TRAITS_NUM] memory numericTraits_, uint256 rarityScore_)
+        returns (int16[] memory characteristics_, uint256 rarityScore_)
     {
-        (numericTraits_, rarityScore_) = LibDuck.modifiedTraitsAndRarityScore(_tokenId);
+        (characteristics_, rarityScore_) = LibDuck.modifiedCharacteristicsAndRarityScore(_tokenId);
     }
 
     ///@notice Check the kinship of an NFT
@@ -194,7 +191,7 @@ contract DuckGameFacet is AccessControl {
         view
         returns (DucksIdsWithKinshipDTO[] memory tokenIdsWithKinship_)
     {
-        uint32[] memory tokenIds = s.ownerTokenIds[_owner];
+        uint32[] memory tokenIds = s.ownerDuckIds[_owner];
         uint256 length = all ? tokenIds.length : _count;
         tokenIdsWithKinship_ = new DucksIdsWithKinshipDTO[](length);
 
@@ -205,7 +202,7 @@ contract DuckGameFacet is AccessControl {
         for (uint256 i; i < length; i++) {
             uint256 offset = i + _skip;
             uint32 tokenId = tokenIds[offset];
-            if (s.ducks[tokenId].status == DuckStatus.DUCK) {
+            if (s.ducks[tokenId].status == DuckStatusType.DUCK) {
                 tokenIdsWithKinship_[i].tokenId = tokenId;
                 tokenIdsWithKinship_[i].kinship = LibDuck.kinship(tokenId);
                 tokenIdsWithKinship_[i].lastInteracted = s.ducks[tokenId].lastInteracted;
@@ -252,25 +249,26 @@ contract DuckGameFacet is AccessControl {
 
             require(
                 sender == owner || s.operators[owner][sender] || s.approved[tokenId] == sender
-                    || s.petOperators[owner][sender] || "DuckGameFacet: Not owner of token or approved"
+                    || s.petOperators[owner][sender], "DuckGameFacet: Not owner of token or approved"
             );
 
-            require(s.ducks[tokenId].status == DuckStatus.DUCK, "DuckGameFacet: Only valid for Duck");
+            require(s.ducks[tokenId].status == DuckStatusType.DUCK, "DuckGameFacet: Only valid for Duck");
             LibDuck.interact(tokenId);
         }
     }
 
-    ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
-    ///@dev only valid for claimed ducks
-    ///@param _tokenId The identifier of the NFT to spend the skill points on
-    ///@param _values An array of four integers that represent the values of the skill points
-    function spendSkillPoints(uint256 _tokenId, int16[4] calldata _values)
-        external
-        onlyUnlocked(_tokenId)
-        onlyDuckOwner(_tokenId)
-    {
-        LibDuck.spendSkillPoints(_tokenId, _values);
-    }
+    // TODO : wip characterisitcs
+    // ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
+    // ///@dev only valid for claimed ducks
+    // ///@param _tokenId The identifier of the NFT to spend the skill points on
+    // ///@param _values An array of four integers that represent the values of the skill points
+    // function spendSkillPoints(uint256 _tokenId, int16[4] calldata _values)
+    //     external
+    //     onlyUnlocked(_tokenId)
+    //     onlyDuckOwner(_tokenId)
+    // {
+    //     LibDuck.spendSkillPoints(_tokenId, _values);
+    // }
 
     function isDuckLocked(uint256 _tokenId) external view returns (bool isLocked) {
         isLocked = s.ducks[_tokenId].locked;
@@ -279,15 +277,11 @@ contract DuckGameFacet is AccessControl {
     /// TODO : later upgrade
     // function resetSkillPoints(uint32 _tokenId)
 
-    function getDuckBaseNumericTraits(uint32 _tokenId)
-        public
-        view
-        returns (int16[NUMERIC_TRAITS_NUM] memory numericTraits_)
-    {
+    function getDuckBaseCharacteristics(uint32 _tokenId) public view returns (int16[] memory characteristics_) {
         // cast to uint256 for CollateralTypes key
         uint256 cycleId = uint256(s.ducks[_tokenId].cycleId);
         uint256 randomNumber = s.ducks[_tokenId].randomNumber;
         address collateralType = s.ducks[_tokenId].collateralType;
-        numericTraits_ = LibMaths.toNumericTraits(randomNumber, s.collateralTypeInfo[collateralType].modifiers, cycleId);
+        characteristics_ =  LibMaths.calculateCharacteristics(randomNumber, s.collateralTypeInfo[collateralType], cycleId);
     }
 }
