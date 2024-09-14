@@ -3,10 +3,11 @@ pragma solidity >=0.8.21;
 
 import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
 import {VRFV2PlusWrapperInterface} from "../interfaces/IVRFV2PlusWrapperInterface.sol";
+import {AccessControl} from "../shared/AccessControl.sol";
 
 error DiamondAlreadyInitialized();
 
-contract InitDiamond {
+contract InitDiamond is AccessControl {
     event InitializeDiamond(address sender);
 
     function init(
@@ -19,7 +20,7 @@ contract InitDiamond {
         uint16 _vrfRequestConfirmations,
         uint32 _vrfNumWords
     ) external {
-        AppStorage storage s = LibAppStorage.diamondStorage();
+        // AppStorage storage s = LibAppStorage.diamondStorage();
         if (s.diamondInitialized) {
             revert DiamondAlreadyInitialized();
         }

@@ -41,8 +41,9 @@ contract DuckGameFacet is AccessControl {
         // emit LibERC721.Transfer(address(0), _to, duckId);
         duckId++;
         s.duckIdCounter = duckId;
+
         // LibDuck.verify(duckId);
-        LibERC20.safeTransferFrom(address(s.quackTokenAddress), _msgSender(), address(this), price);
+        LibERC20.safeTransferFrom(address(s.quackTokenAddress), sender, address(this), price);
         // LibDuck.purchase(sender, totalPrice);
     }
 

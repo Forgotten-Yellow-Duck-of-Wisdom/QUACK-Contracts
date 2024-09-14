@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
 
-import "../shared/Structs.sol";
-
 interface IERC20 {
     function name() external view returns (string memory);
 
