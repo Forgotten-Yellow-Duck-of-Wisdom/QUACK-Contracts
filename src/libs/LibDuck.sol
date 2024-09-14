@@ -29,7 +29,7 @@ library LibDuck {
 
         // Using 0x000000000000000000000000000000000000dEaD  as burn address.
         address quackTokenAddress = s.quackTokenAddress;
-        LibERC20.safeTransferFrom(quackTokenAddress, _from, address(0x000000000000000000000000000000000000dEaD ), share);
+        LibERC20.safeTransferFrom(quackTokenAddress, _from, address(0x000000000000000000000000000000000000dEaD), share);
         LibERC20.safeTransferFrom(quackTokenAddress, _from, s.treasuryAddress, share);
         LibERC20.safeTransferFrom(quackTokenAddress, _from, s.farmingAddress, share);
         LibERC20.safeTransferFrom(quackTokenAddress, _from, s.daoAddress, share);

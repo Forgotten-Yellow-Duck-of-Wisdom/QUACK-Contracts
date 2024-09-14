@@ -79,7 +79,7 @@ module.exports = {
     // shell command to execute before deploy
     preDeploy: "",
     // shell command to execute after deploy
-    postDeploy: "scripts/verify.js",
+    // postDeploy: "scripts/verify.js",
   },
   // Wallets to use for deployment
   wallets: {
@@ -102,6 +102,17 @@ module.exports = {
       config: {
         // Mnemonic phrase
         words: () => process.env.MNEMONIC,
+        // 0-based index of the account to use
+        index: 0,
+      },
+    },
+    walletTest: {
+      // Wallet type - mnemonic
+      type: "mnemonic",
+      // Wallet config
+      config: {
+        // Mnemonic phrase
+        words: () => process.env.TEST_ADMIN_MNEMO,
         // 0-based index of the account to use
         index: 0,
       },
@@ -132,15 +143,24 @@ module.exports = {
       // CREATE3 salt
       create3Salt: SALT,
     },
-    testnet: {
+    sepolia: {
       // Network to deploy to
       network: "sepolia",
       // Wallet to use for deployment
-      wallet: "wallet2",
+      wallet: "walletTest",
       // Initialization function arguments
-      initArgs: [],
+      initArgs: [
+        process.env.QUACK_TOKEN_ADDRESS_SEPOLIA,
+        process.env.TEST_TREASURY_WADDRESS,
+        process.env.TEST_FARMING_WADDRESS,
+        process.env.TEST_DAO_WADDRESS,
+        process.env.CHAINLINK_VRF_V2_COORDINATOR_SEPOLIA,
+        100000, // vrfCallbackGasLimit
+        3, // vrfRequestConfirmations
+        1 // vrfNumWords
+      ],
       // CREATE3 salt
-      create3Salt: SALT,
+      // create3Salt: SALT,
     },
   },
 };

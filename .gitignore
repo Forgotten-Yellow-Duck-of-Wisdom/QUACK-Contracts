@@ -1,4 +1,5 @@
 .env
+.env.local
 coverage
 coverage.json
 lcov.info

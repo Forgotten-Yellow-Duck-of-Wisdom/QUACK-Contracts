@@ -73,7 +73,7 @@ contract AdminFacet is AccessControl {
 
             //then handle global collateralTypes array
             uint256 index = s.collateralTypeIndexes[newCollateralTypeAddress];
-            bool collateralExists = index > 0 || s.collateralTypes[0] == newCollateralTypeAddress;
+            bool collateralExists = index > 0 || (s.collateralTypes.length > 0 && s.collateralTypes[0] == newCollateralTypeAddress);
 
             if (!collateralExists) {
                 s.collateralTypes.push(newCollateralTypeAddress);
