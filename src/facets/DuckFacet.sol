@@ -21,7 +21,6 @@ contract DuckFacet is AccessControl {
     function totalSupply() external view returns (uint256 totalSupply_) {
         totalSupply_ = LibAppStorage.diamondStorage().duckIds.length;
     }
-                        
 
     /**
      * @notice Enumerate NFTs assigned to a specific owner
@@ -73,7 +72,7 @@ contract DuckFacet is AccessControl {
      * @return tokenId_ The unique identifier of the NFT at the specified position in the owner's collection
      */
     function tokenOfOwnerByIndex(address _owner, uint256 _index) external view returns (uint256 tokenId_) {
-                AppStorage storage s = LibAppStorage.diamondStorage();
+        AppStorage storage s = LibAppStorage.diamondStorage();
         require(_index < s.ownerDuckIds[_owner].length, "DuckFacet: index beyond owner balance");
         tokenId_ = s.ownerDuckIds[_owner][_index];
     }

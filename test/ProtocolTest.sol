@@ -116,7 +116,6 @@ contract ProtocolTest is TestBaseContract {
         // quackToken.mint(account1, 1000000000000000000);
         // Approve QUACK tokens for spending
 
-
         quackToken.approve(address(diamond), mintPrice);
 
         // Mint a duck
@@ -165,12 +164,15 @@ contract ProtocolTest is TestBaseContract {
     function testBasicDuckHatching() public {
         testBasicEggsMint();
         uint256 vrfPrice = diamond.getVRFRequestPrice();
-    		uint256[] memory ids = new uint256[](1);
-    		ids[0] = 0;
+        uint256[] memory ids = new uint256[](1);
+        ids[0] = 0;
         diamond.openEggs{value: vrfPrice}(ids);
-        diamond.claimDuck(ids[0], 1, 1);
+        uint256 minStake = 1;
+        uint256 chosenDuck = 1;
+        quackToken.approve(address(diamond), minStake);
+        diamond.claimDuck(ids[0], chosenDuck, minStake);
 
-        DuckInfoDTO memory duckInfo = diamond.getDuckInfo(ids[0]);
+        DuckInfoDTO memory duckInfo = diamond.getDuckInfo(0);
         assertEq(uint256(duckInfo.status), uint256(DuckStatusType.DUCK), "Duck not hatched");
         assertEq(duckInfo.collateral, address(quackToken), "Duck not hatched");
     }

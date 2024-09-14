@@ -165,7 +165,7 @@ library LibDuck {
             duckInfo_.toNextLevel = xpUntilNextLevel(s.ducks[_tokenId].experience);
             duckInfo_.level = duckLevel(s.ducks[_tokenId].experience);
             duckInfo_.usedSkillPoints = s.ducks[_tokenId].usedSkillPoints;
-            duckInfo_.characteristics = getCharacteristicsArray(s.ducks[_tokenId]);
+            duckInfo_.characteristics = characteristics;
             duckInfo_.statistics = getStatisticsArray(s.ducks[_tokenId]);
             duckInfo_.baseRarityScore = LibMaths.baseRarityScore(characteristics);
             (duckInfo_.modifiedCharacteristics, duckInfo_.modifiedRarityScore) =
@@ -266,9 +266,13 @@ library LibDuck {
         //Check if trait boosts from consumables are still valid
         int256 boostDecay = int256((block.timestamp - s.ducks[_tokenId].lastTemporaryBoost) / 24 hours);
         uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
+        characteristics_ = new int16[](characteristicsCount);
         for (uint256 i; i < characteristicsCount; i++) {
+            console2.log("i", i);
             int256 number = s.ducks[_tokenId].characteristics[uint16(i)];
+            console2.log("number", number);
             int256 boost = s.ducks[_tokenId].temporaryCharacteristicsBoosts[uint16(i)];
+            console2.log("boost", boost);
 
             if (boost > 0 && boost > boostDecay) {
                 number += boost - boostDecay;
@@ -392,50 +396,42 @@ library LibDuck {
     // Utils
     /////////////////////////////////////////////////////////////////////////////////
 
-    function getCharacteristicsArray(DuckInfo storage duckInfo) internal view returns (int16[] memory) {
+    function getCharacteristicsArray(DuckInfo storage duckInfo) internal view returns (int16[] memory characteristicsArray_) {
         uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
-        int16[] memory characteristicsArray = new int16[](characteristicsCount);
+        characteristicsArray_ = new int16[](characteristicsCount);
 
         for (uint16 i = 0; i < characteristicsCount; i++) {
-            characteristicsArray[i] = duckInfo.characteristics[i];
+            characteristicsArray_[i] = duckInfo.characteristics[i];
         }
-
-        return characteristicsArray;
     }
 
-    function getModifiersArray(CollateralTypeInfo storage collateral) internal view returns (int16[] memory) {
+    function getModifiersArray(CollateralTypeInfo storage collateral) internal view returns (int16[] memory modifiersArray_) {
         uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
-        int16[] memory modifiersArray = new int16[](characteristicsCount);
+        modifiersArray_ = new int16[](characteristicsCount);
 
         for (uint16 i = 0; i < characteristicsCount; i++) {
-            modifiersArray[i] = collateral.modifiers[i];
+            modifiersArray_[i] = collateral.modifiers[i];
         }
-
-        return modifiersArray;
     }
 
-    function getStatisticsArray(DuckInfo storage duckInfo) internal view returns (int16[] memory) {
+    function getStatisticsArray(DuckInfo storage duckInfo) internal view returns (int16[] memory statisticsArray_) {
         uint256 statisticsCount = uint256(type(DuckStatisticsType).max) + 1;
-        int16[] memory statisticsArray = new int16[](statisticsCount);
+        statisticsArray_ = new int16[](statisticsCount);
 
         for (uint16 i = 0; i < statisticsCount; i++) {
-            statisticsArray[i] = duckInfo.statistics[i];
+            statisticsArray_[i] = duckInfo.statistics[i];
         }
-
-        return statisticsArray;
     }
 
-    function getEquippedWearablesArray(DuckInfo storage duckInfo) internal view returns (uint256[] memory) {
+    function getEquippedWearablesArray(DuckInfo storage duckInfo) internal view returns (uint256[] memory wearablesArray_) {
         // TODO : set total equipped wearable count
         // uint256 wearableCount = uint256(type(DuckCharacteristicsType).max) + 1;
         uint256 wearableCount = 16;
 
-        uint256[] memory wearablesArray = new uint256[](wearableCount);
+        wearablesArray_ = new uint256[](wearableCount);
 
         for (uint16 i = 0; i < wearableCount; i++) {
-            wearablesArray[i] = duckInfo.equippedWearables[i];
+            wearablesArray_[i] = duckInfo.equippedWearables[i];
         }
-
-        return wearablesArray;
     }
 }

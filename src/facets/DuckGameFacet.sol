@@ -60,7 +60,7 @@ contract DuckGameFacet is AccessControl {
     ///@return cycle_ A struct containing the details about the latest cycle`
 
     function currentCycle() external view returns (uint256 cycleId_, Cycle memory cycle_) {
-                AppStorage storage s = LibAppStorage.diamondStorage();
+        AppStorage storage s = LibAppStorage.diamondStorage();
         cycleId_ = s.currentCycleId;
         cycle_ = s.cycles[cycleId_];
     }
@@ -174,7 +174,7 @@ contract DuckGameFacet is AccessControl {
         view
         returns (DucksIdsWithKinshipDTO[] memory tokenIdsWithKinship_)
     {
-                        AppStorage storage s = LibAppStorage.diamondStorage();
+        AppStorage storage s = LibAppStorage.diamondStorage();
         uint32[] memory tokenIds = s.ownerDuckIds[_owner];
         uint256 length = all ? tokenIds.length : _count;
         tokenIdsWithKinship_ = new DucksIdsWithKinshipDTO[](length);
@@ -227,7 +227,7 @@ contract DuckGameFacet is AccessControl {
     ///@param _tokenIds An array containing the token identifiers of the claimed ducks that are to be interacted with
     function interact(uint256[] calldata _tokenIds) external {
         address sender = _msgSender();
-                        AppStorage storage s = LibAppStorage.diamondStorage();
+        AppStorage storage s = LibAppStorage.diamondStorage();
         for (uint256 i; i < _tokenIds.length; i++) {
             uint256 tokenId = _tokenIds[i];
             address owner = s.ducks[tokenId].owner;
@@ -264,7 +264,7 @@ contract DuckGameFacet is AccessControl {
     // function resetSkillPoints(uint32 _tokenId)
 
     function getDuckBaseCharacteristics(uint32 _tokenId) public view returns (int16[] memory characteristics_) {
-                        AppStorage storage s = LibAppStorage.diamondStorage();
+        AppStorage storage s = LibAppStorage.diamondStorage();
         // cast to uint256 for CollateralTypes key
         uint256 cycleId = uint256(s.ducks[_tokenId].cycleId);
         uint256 randomNumber = s.ducks[_tokenId].randomNumber;

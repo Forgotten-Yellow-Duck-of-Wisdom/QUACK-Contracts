@@ -6,7 +6,7 @@ struct MetaTxContextStorage {
 }
 
 struct VRFExtraArgsV1 {
-bool nativePayment;
+    bool nativePayment;
 }
 
 struct RevenueSharesDTO {

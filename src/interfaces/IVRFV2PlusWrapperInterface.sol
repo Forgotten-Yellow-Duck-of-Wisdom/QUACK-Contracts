@@ -65,8 +65,10 @@ interface VRFV2PlusWrapperInterface {
      * @param _requestConfirmations number of request confirmations to wait before serving a request.
      * @param _numWords is the number of words to request.
      */
-    function requestRandomWordsInNative(uint32 _callbackGasLimit, uint16 _requestConfirmations, uint32 _numWords, bytes calldata _extraArgs)
-        external
-        payable
-        returns (uint256 requestId);
+    function requestRandomWordsInNative(
+        uint32 _callbackGasLimit,
+        uint16 _requestConfirmations,
+        uint32 _numWords,
+        bytes calldata _extraArgs
+    ) external payable returns (uint256 requestId);
 }

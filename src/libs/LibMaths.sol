@@ -4,6 +4,7 @@ pragma solidity >=0.8.21;
 
 import {DuckCharacteristicsType} from "../shared/Structs_Ducks.sol";
 import {CollateralTypeInfo} from "../shared/Structs.sol";
+import {console2} from "forge-std/console2.sol";
 
 library LibMaths {
     /// @notice Generates numeric traits for a duck based on a random number, modifiers, and cycle ID
@@ -18,6 +19,9 @@ library LibMaths {
         uint256 _cycleId
     ) internal view returns (int16[] memory characteristics_) {
         uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
+        console2.log("calculateCharacteristics", characteristicsCount);
+        // Initialize the array with the required length
+        characteristics_ = new int16[](characteristicsCount);
         if (_cycleId == 1) {
             for (uint256 i; i < characteristicsCount; i++) {
                 uint256 value = uint8(uint256(_randomNumber >> (i * 8)));

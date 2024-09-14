@@ -13,17 +13,17 @@ library LibERC20 {
         require(size > 0, "LibERC20: call to non-contract");
 
         (bool success, bytes memory returndata) = token.call(data);
-    if (!success) {
-        if (returndata.length > 0) {
-            // Bubble up the revert reason from the call
-            assembly {
-                let returndata_size := mload(returndata)
-                revert(add(32, returndata), returndata_size)
+        if (!success) {
+            if (returndata.length > 0) {
+                // Bubble up the revert reason from the call
+                assembly {
+                    let returndata_size := mload(returndata)
+                    revert(add(32, returndata), returndata_size)
+                }
+            } else {
+                revert("LibERC20: low-level call failed");
             }
-        } else {
-            revert("LibERC20: low-level call failed");
         }
-    }
         if (returndata.length > 0) {
             require(abi.decode(returndata, (bool)), "LibERC20: operation did not succeed");
         }

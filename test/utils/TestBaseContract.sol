@@ -42,7 +42,6 @@ abstract contract TestBaseContract is Test {
         // quackToken = IERC20(vm.envAddress("QUACK_TOKEN_ADDRESS_SEPOLIA"));
         quackToken = new test_ERC20(account0, 1000000000000000000, 18);
 
-
         // console2.log("Deploy diamond");
         diamond = IDiamondProxy(address(new DiamondProxy(account0)));
 

@@ -46,8 +46,8 @@ contract VrfFacet is AccessControl {
         // });
         // s.vrfRequestIds.push(requestId);
         s.vrfRequestIdToTokenId[requestId] = _tokenId;
-        
-        // FOR TESTING PURPOSE ONLY 
+
+        // FOR TESTING PURPOSE ONLY
         uint256[] memory randomWords = new uint256[](1);
         randomWords[0] = 1;
         testCompleteVRF(requestId, randomWords);

@@ -85,7 +85,7 @@ contract CollateralFacet is AccessControl {
         view
         returns (address collateralType_, address escrow_, uint256 balance_)
     {
-                AppStorage storage s = LibAppStorage.diamondStorage();
+        AppStorage storage s = LibAppStorage.diamondStorage();
         escrow_ = s.ducks[_tokenId].escrow;
         require(escrow_ != address(0), "CollateralFacet: Does not have an escrow");
         collateralType_ = s.ducks[_tokenId].collateralType;
@@ -102,7 +102,7 @@ contract CollateralFacet is AccessControl {
     ///@param _stakeAmount The amount of collateral tokens to increase the current collateral by
 
     function increaseStake(uint256 _tokenId, uint256 _stakeAmount) external onlyDuckOwner(_tokenId) {
-                AppStorage storage s = LibAppStorage.diamondStorage();
+        AppStorage storage s = LibAppStorage.diamondStorage();
         address escrow = s.ducks[_tokenId].escrow;
         require(escrow != address(0), "CollateralFacet: Does not have an escrow");
         address collateralType = s.ducks[_tokenId].collateralType;
@@ -120,7 +120,7 @@ contract CollateralFacet is AccessControl {
         onlyUnlocked(_tokenId)
         onlyDuckOwner(_tokenId)
     {
-                AppStorage storage s = LibAppStorage.diamondStorage();
+        AppStorage storage s = LibAppStorage.diamondStorage();
         address escrow = s.ducks[_tokenId].escrow;
         require(escrow != address(0), "CollateralFacet: Does not have an escrow");
 
@@ -140,7 +140,7 @@ contract CollateralFacet is AccessControl {
     // ///@param _toId Identifier of another claimed Duck where the XP of the sacrificed Duck will be sent
 
     // function decreaseAndDestroy(uint256 _tokenId, uint256 _toId) external onlyUnlocked(_tokenId) onlyDuckOwner(_tokenId) {
-    //         AppStorage storage s = LibAppStorage.diamondStorage();    
+    //         AppStorage storage s = LibAppStorage.diamondStorage();
     // address escrow = s.ducks[_tokenId].escrow;
     //     require(escrow != address(0), "CollateralFacet: Does not have an escrow");
 
