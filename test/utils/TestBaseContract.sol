@@ -59,7 +59,7 @@ abstract contract TestBaseContract is Test {
                 vm.envAddress("TEST_TREASURY_WADDRESS"),
                 vm.envAddress("TEST_FARMING_WADDRESS"),
                 vm.envAddress("TEST_DAO_WADDRESS"),
-                vm.envAddress("CHAINLINK_VRF_V2_COORDINATOR_SEPOLIA"),
+                vm.envAddress("CHAINLINK_VRF_V2_Wrapper_SEPOLIA"),
                 uint32(100000), // vrfCallbackGasLimit
                 uint16(3), // vrfRequestConfirmations
                 uint32(1) // vrfNumWords

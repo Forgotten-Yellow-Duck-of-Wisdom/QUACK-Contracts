@@ -5,6 +5,10 @@ struct MetaTxContextStorage {
     address trustedForwarder;
 }
 
+struct VRFExtraArgsV1 {
+bool nativePayment;
+}
+
 struct RevenueSharesDTO {
     address burnAddress;
     address daoAddress;

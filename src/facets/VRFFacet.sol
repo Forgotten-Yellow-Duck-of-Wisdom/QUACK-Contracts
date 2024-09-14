@@ -2,6 +2,7 @@
 pragma solidity >=0.8.21;
 
 import {DuckStatusType} from "../shared/Structs_Ducks.sol";
+import {VRFExtraArgsV1} from "../shared/Structs.sol";
 import {AccessControl} from "../shared/AccessControl.sol";
 import {LibAppStorage} from "../libs/LibAppStorage.sol";
 
@@ -11,12 +12,12 @@ contract VrfFacet is AccessControl {
     event RequestSent(uint256 requestId, uint32 numWords);
 
     function getVRFRequestPrice() external view returns (uint256) {
-        return s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit);
+        return s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit, s.vrfNumWords);
     }
 
     function openEggs(uint256[] calldata _tokenIds) external payable {
         address owner = _msgSender();
-        uint256 requestPrice = s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit);
+        uint256 requestPrice = s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit, s.vrfNumWords);
         require(msg.value >= requestPrice * _tokenIds.length, "VRFFacet: Not enough native funds for chainlink VRF");
         for (uint256 i; i < _tokenIds.length; i++) {
             uint256 tokenId = _tokenIds[i];
@@ -30,9 +31,9 @@ contract VrfFacet is AccessControl {
 
     function requestRandomWords(uint256 _tokenId, uint256 _requestPrice) internal returns (uint256 requestId) {
         s.ducks[_tokenId].status = DuckStatusType.VRF_PENDING;
-
+        bytes memory extraArgs = abi.encodeWithSelector(bytes4(keccak256("VRF ExtraArgsV1")), VRFExtraArgsV1(true));
         requestId = s.chainlink_vrf_wrapper.requestRandomWordsInNative{value: _requestPrice}(
-            s.vrfCallbackGasLimit, s.vrfRequestConfirmations, s.vrfNumWords
+            s.vrfCallbackGasLimit, s.vrfRequestConfirmations, s.vrfNumWords, extraArgs
         );
 
         // s.vrfRequests[requestId] = RequestStatus({
@@ -42,9 +43,23 @@ contract VrfFacet is AccessControl {
         // });
         // s.vrfRequestIds.push(requestId);
         s.vrfRequestIdToTokenId[requestId] = _tokenId;
+        
+        // FOR TESTING PURPOSE ONLY 
+        uint256[] memory randomWords = new uint256[](1);
+        randomWords[0] = 1;
+        testCompleteVRF(requestId, randomWords);
 
         emit RequestSent(requestId, s.vrfNumWords);
         return requestId;
+    }
+
+    function testCompleteVRF(uint256 _requestId, uint256[] memory _randomWords) internal {
+        uint256 tokenId = s.vrfRequestIdToTokenId[_requestId];
+        require(s.ducks[tokenId].status == DuckStatusType.VRF_PENDING, "VrfFacet: VRF is not pending");
+        s.ducks[tokenId].status = DuckStatusType.OPEN_EGG;
+        s.eggIdToRandomNumber[tokenId] = _randomWords[0];
+
+        emit EggOpened(tokenId);
     }
 
     //   /**

@@ -154,7 +154,7 @@ module.exports = {
         process.env.TEST_TREASURY_WADDRESS,
         process.env.TEST_FARMING_WADDRESS,
         process.env.TEST_DAO_WADDRESS,
-        process.env.CHAINLINK_VRF_V2_COORDINATOR_SEPOLIA,
+        process.env.CHAINLINK_VRF_V2_Wrapper_SEPOLIA,
         100000, // vrfCallbackGasLimit
         3, // vrfRequestConfirmations
         1 // vrfNumWords
