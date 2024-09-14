@@ -8,7 +8,6 @@ import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
  * @dev ERC2711 meta-transaction context variant using AppStorage.
  */
 abstract contract MetaContext is Context {
-    AppStorage internal s;
 
     function isTrustedForwarder(address forwarder) internal view returns (bool) {
         return forwarder == LibAppStorage.diamondStorage().metaTxContext.trustedForwarder;

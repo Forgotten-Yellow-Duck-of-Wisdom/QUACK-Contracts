@@ -6,7 +6,7 @@ import {CollateralTypeDTO, CollateralTypeInfo} from "../shared/Structs.sol";
 import {LibDuck} from "../libs/LibDuck.sol";
 import {IDuckFacet} from "../interfaces/IDuckFacet.sol";
 import {AccessControl} from "../shared/AccessControl.sol";
-import {LibAppStorage} from "../libs/LibAppStorage.sol";
+import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
 import {LibERC721} from "../libs/LibERC721.sol";
 import {LibString} from "../libs/LibString.sol";
 
@@ -22,6 +22,7 @@ contract AdminFacet is AccessControl {
         external
         isAdmin
     {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         s.vrfCallbackGasLimit = _callbackGasLimit;
         s.vrfRequestConfirmations = _requestConfirmations;
         s.vrfNumWords = _numWords;
@@ -37,6 +38,7 @@ contract AdminFacet is AccessControl {
         isAdmin
         returns (uint256 cycleId_)
     {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 currentCycleId = s.currentCycleId;
         // require(
         //     s.cycles[currentCycleId].totalCount == s.cycles[currentCycleId].cycleMaxSize,
@@ -55,6 +57,7 @@ contract AdminFacet is AccessControl {
     ///@param _cycleId Identifier for cycle to add the collaterals to
     ///@param _collateralTypes An array of structs where each struct contains details about a particular collateral
     function addCollateralTypes(uint256 _cycleId, CollateralTypeDTO[] calldata _collateralTypes) external isAdmin {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         for (uint256 i; i < _collateralTypes.length; i++) {
             address newCollateralTypeAddress = _collateralTypes[i].collateralType;
 
@@ -115,6 +118,7 @@ contract AdminFacet is AccessControl {
     ///@param _tokenIds The identifiers of the Ducks to grant XP to
     ///@param _xpValues The amount XP to grant each Duck
     function grantExperience(uint256[] calldata _tokenIds, uint256[] calldata _xpValues) external isAdmin {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         require(_tokenIds.length == _xpValues.length, "AdminFacet: IDs must match XP array length");
         for (uint256 i; i < _tokenIds.length; i++) {
             uint256 tokenId = _tokenIds[i];

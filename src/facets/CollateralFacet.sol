@@ -2,7 +2,7 @@
 pragma solidity >=0.8.21;
 
 import {AccessControl} from "../shared/AccessControl.sol";
-import {LibAppStorage} from "../libs/LibAppStorage.sol";
+import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
 // import {LibERC721} from "../libs/LibERC721.sol";
 import {LibERC20} from "../libs/LibERC20.sol";
 import {LibString} from "../libs/LibString.sol";
@@ -21,7 +21,7 @@ contract CollateralFacet is AccessControl {
     ///@param _cycleId identifier of the cycle to query
     ///@return collateralTypes_ An array containing the addresses of all collaterals available for cycle `_cycleId`
     function getCycleCollateralsAddresses(uint256 _cycleId) external view returns (address[] memory collateralTypes_) {
-        collateralTypes_ = s.cycleCollateralTypes[_cycleId];
+        collateralTypes_ = LibAppStorage.diamondStorage().cycleCollateralTypes[_cycleId];
     }
 
     ///@notice Query all details about a collateral in a cycle
@@ -33,6 +33,7 @@ contract CollateralFacet is AccessControl {
         view
         returns (CollateralTypeDTO memory collateralInfo_)
     {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         address collateral = s.cycleCollateralTypes[_cycleId][_collateralId];
         collateralInfo_ = CollateralTypeDTO(
             collateral,
@@ -52,6 +53,7 @@ contract CollateralFacet is AccessControl {
         view
         returns (CollateralTypeDTO[] memory collateralInfo_)
     {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         address[] memory collateralTypes = s.cycleCollateralTypes[_cycleId];
 
         collateralInfo_ = new CollateralTypeDTO[](s.cycleCollateralTypes[_cycleId].length);
@@ -69,7 +71,7 @@ contract CollateralFacet is AccessControl {
     ///@notice Query the address of all collaterals that are available universally throughout all cycles
     ///@return An array of addresses,each address representing a collateral's contract address
     function getAllCyclesCollateralsTypesAddresses() external view returns (address[] memory) {
-        return s.collateralTypes;
+        return LibAppStorage.diamondStorage().collateralTypes;
     }
 
     ///@notice Query the collateral address,balance and escrow contract of an NFT
@@ -83,6 +85,7 @@ contract CollateralFacet is AccessControl {
         view
         returns (address collateralType_, address escrow_, uint256 balance_)
     {
+                AppStorage storage s = LibAppStorage.diamondStorage();
         escrow_ = s.ducks[_tokenId].escrow;
         require(escrow_ != address(0), "CollateralFacet: Does not have an escrow");
         collateralType_ = s.ducks[_tokenId].collateralType;
@@ -99,6 +102,7 @@ contract CollateralFacet is AccessControl {
     ///@param _stakeAmount The amount of collateral tokens to increase the current collateral by
 
     function increaseStake(uint256 _tokenId, uint256 _stakeAmount) external onlyDuckOwner(_tokenId) {
+                AppStorage storage s = LibAppStorage.diamondStorage();
         address escrow = s.ducks[_tokenId].escrow;
         require(escrow != address(0), "CollateralFacet: Does not have an escrow");
         address collateralType = s.ducks[_tokenId].collateralType;
@@ -116,6 +120,7 @@ contract CollateralFacet is AccessControl {
         onlyUnlocked(_tokenId)
         onlyDuckOwner(_tokenId)
     {
+                AppStorage storage s = LibAppStorage.diamondStorage();
         address escrow = s.ducks[_tokenId].escrow;
         require(escrow != address(0), "CollateralFacet: Does not have an escrow");
 
@@ -135,7 +140,8 @@ contract CollateralFacet is AccessControl {
     // ///@param _toId Identifier of another claimed Duck where the XP of the sacrificed Duck will be sent
 
     // function decreaseAndDestroy(uint256 _tokenId, uint256 _toId) external onlyUnlocked(_tokenId) onlyDuckOwner(_tokenId) {
-    //     address escrow = s.ducks[_tokenId].escrow;
+    //         AppStorage storage s = LibAppStorage.diamondStorage();    
+    // address escrow = s.ducks[_tokenId].escrow;
     //     require(escrow != address(0), "CollateralFacet: Does not have an escrow");
 
     //     // require(s.nftItems[address(this)][_tokenId].length == 0, "CollateralFacet: Can't burn Duck with items");

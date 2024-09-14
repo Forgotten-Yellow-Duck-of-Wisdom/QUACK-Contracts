@@ -20,6 +20,6 @@ contract ProtocolFacet is AccessControl {
     ///@notice Query the $QUACK token address
     ///@return contract_ the deployed address of the $QUACK token contract
     function quackAddress() external view returns (address contract_) {
-        contract_ = s.quackTokenAddress;
+        contract_ = LibAppStorage.diamondStorage().quackTokenAddress;
     }
 }

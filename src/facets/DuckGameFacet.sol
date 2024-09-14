@@ -5,7 +5,7 @@ import {Cycle, EggDuckTraitsDTO, DucksIdsWithKinshipDTO, DuckStatusType} from ".
 import {LibDuck} from "../libs/LibDuck.sol";
 import {IDuckFacet} from "../interfaces/IDuckFacet.sol";
 import {AccessControl} from "../shared/AccessControl.sol";
-import {LibAppStorage} from "../libs/LibAppStorage.sol";
+import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
 import {LibERC721} from "../libs/LibERC721.sol";
 import {LibERC20} from "../libs/LibERC20.sol";
 import {LibString} from "../libs/LibString.sol";
@@ -19,6 +19,7 @@ contract DuckGameFacet is AccessControl {
     ///@notice Allow an address to purchase a duck egg
     ///@param _to Address to send the egg once purchased
     function buyEgg(address _to) external returns (uint32 duckId_) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 currentCycleId = s.currentCycleId;
         require(currentCycleId == 1, "DuckGameFacet: Can only purchase from cycle 1");
         Cycle storage cycle = s.cycles[currentCycleId];
@@ -51,7 +52,7 @@ contract DuckGameFacet is AccessControl {
     ///@param _name Name to check
     ///@return available_ True if the name has not been taken, False otherwise
     function duckNameAvailable(string calldata _name) external view returns (bool available_) {
-        available_ = s.duckNamesUsed[LibString.validateAndLowerName(_name)];
+        available_ = LibAppStorage.diamondStorage().duckNamesUsed[LibString.validateAndLowerName(_name)];
     }
 
     ///@notice Check the latest Cycle identifier and details
@@ -59,6 +60,7 @@ contract DuckGameFacet is AccessControl {
     ///@return cycle_ A struct containing the details about the latest cycle`
 
     function currentCycle() external view returns (uint256 cycleId_, Cycle memory cycle_) {
+                AppStorage storage s = LibAppStorage.diamondStorage();
         cycleId_ = s.currentCycleId;
         cycle_ = s.cycles[cycleId_];
     }
@@ -84,7 +86,7 @@ contract DuckGameFacet is AccessControl {
     ///@param _tokenId The identifier of the Duck to query
     ///@return respecCount_ The number of times an Duck has performed a skill reset
     function respecCount(uint32 _tokenId) external view returns (uint256 respecCount_) {
-        respecCount_ = s.duckRespecCount[_tokenId];
+        respecCount_ = LibAppStorage.diamondStorage().duckRespecCount[_tokenId];
     }
 
     ///@notice Query the available skill points that can be used for an NFT
@@ -172,6 +174,7 @@ contract DuckGameFacet is AccessControl {
         view
         returns (DucksIdsWithKinshipDTO[] memory tokenIdsWithKinship_)
     {
+                        AppStorage storage s = LibAppStorage.diamondStorage();
         uint32[] memory tokenIds = s.ownerDuckIds[_owner];
         uint256 length = all ? tokenIds.length : _count;
         tokenIdsWithKinship_ = new DucksIdsWithKinshipDTO[](length);
@@ -224,6 +227,7 @@ contract DuckGameFacet is AccessControl {
     ///@param _tokenIds An array containing the token identifiers of the claimed ducks that are to be interacted with
     function interact(uint256[] calldata _tokenIds) external {
         address sender = _msgSender();
+                        AppStorage storage s = LibAppStorage.diamondStorage();
         for (uint256 i; i < _tokenIds.length; i++) {
             uint256 tokenId = _tokenIds[i];
             address owner = s.ducks[tokenId].owner;
@@ -253,13 +257,14 @@ contract DuckGameFacet is AccessControl {
     // }
 
     function isDuckLocked(uint256 _tokenId) external view returns (bool isLocked) {
-        isLocked = s.ducks[_tokenId].locked;
+        isLocked = LibAppStorage.diamondStorage().ducks[_tokenId].locked;
     }
 
     /// TODO : later upgrade
     // function resetSkillPoints(uint32 _tokenId)
 
     function getDuckBaseCharacteristics(uint32 _tokenId) public view returns (int16[] memory characteristics_) {
+                        AppStorage storage s = LibAppStorage.diamondStorage();
         // cast to uint256 for CollateralTypes key
         uint256 cycleId = uint256(s.ducks[_tokenId].cycleId);
         uint256 randomNumber = s.ducks[_tokenId].randomNumber;

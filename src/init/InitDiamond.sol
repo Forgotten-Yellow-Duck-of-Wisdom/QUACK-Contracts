@@ -20,7 +20,7 @@ contract InitDiamond is AccessControl {
         uint16 _vrfRequestConfirmations,
         uint32 _vrfNumWords
     ) external {
-        // AppStorage storage s = LibAppStorage.diamondStorage();
+        AppStorage storage s = LibAppStorage.diamondStorage();
         if (s.diamondInitialized) {
             revert DiamondAlreadyInitialized();
         }

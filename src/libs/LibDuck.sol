@@ -18,6 +18,7 @@ import {LibERC20} from "./LibERC20.sol";
 import {LibString} from "./LibString.sol";
 import {LibMaths} from "./LibMaths.sol";
 
+import "forge-std/Test.sol";
 // error ERC20NotEnoughBalance(address sender);
 
 library LibDuck {
@@ -82,6 +83,7 @@ library LibDuck {
     function claimDuck(uint256 _tokenId, address _owner, uint256 _option, uint256 _stakeAmount) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
         DuckInfo storage duck = s.ducks[_tokenId];
+        console2.log("duck.status", uint256(duck.status));
         require(duck.status == DuckStatusType.OPEN_EGG, "DuckGameFacet: Egg not open");
         require(_option < 10, "DuckGameFacet: Only 10 duck options available");
         uint256 randomNumber = s.eggIdToRandomNumber[_tokenId];

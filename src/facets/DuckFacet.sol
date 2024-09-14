@@ -5,7 +5,7 @@ import {Cycle, DuckInfoDTO} from "../shared/Structs_Ducks.sol";
 import {LibDuck} from "../libs/LibDuck.sol";
 import {IDuckFacet} from "../interfaces/IDuckFacet.sol";
 import {AccessControl} from "../shared/AccessControl.sol";
-import {LibAppStorage} from "../libs/LibAppStorage.sol";
+import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
 import {LibERC721} from "../libs/LibERC721.sol";
 import {LibString} from "../libs/LibString.sol";
 
@@ -19,8 +19,9 @@ contract DuckFacet is AccessControl {
      * @return totalSupply_ The aggregate count of all NFTs ever created
      */
     function totalSupply() external view returns (uint256 totalSupply_) {
-        totalSupply_ = s.duckIds.length;
+        totalSupply_ = LibAppStorage.diamondStorage().duckIds.length;
     }
+                        
 
     /**
      * @notice Enumerate NFTs assigned to a specific owner
@@ -30,7 +31,7 @@ contract DuckFacet is AccessControl {
      */
     function balanceOf(address _owner) external view returns (uint256 balance_) {
         require(_owner != address(0), "DuckFacet: _owner can't be address(0)");
-        balance_ = s.ownerDuckIds[_owner].length;
+        balance_ = LibAppStorage.diamondStorage().ownerDuckIds[_owner].length;
     }
 
     /**
@@ -49,7 +50,7 @@ contract DuckFacet is AccessControl {
      * @return hatchTime_ The Unix timestamp of the NFT's claim
      */
     function duckHatchTime(uint256 _tokenId) external view returns (uint256 hatchTime_) {
-        hatchTime_ = s.ducks[_tokenId].hatchTime;
+        hatchTime_ = LibAppStorage.diamondStorage().ducks[_tokenId].hatchTime;
     }
 
     /**
@@ -59,6 +60,7 @@ contract DuckFacet is AccessControl {
      * @return tokenId_ The unique identifier of the NFT at the specified index
      */
     function tokenByIndex(uint256 _index) external view returns (uint256 tokenId_) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         require(_index < s.duckIds.length, "DuckFacet: index beyond supply");
         tokenId_ = s.duckIds[_index];
     }
@@ -71,6 +73,7 @@ contract DuckFacet is AccessControl {
      * @return tokenId_ The unique identifier of the NFT at the specified position in the owner's collection
      */
     function tokenOfOwnerByIndex(address _owner, uint256 _index) external view returns (uint256 tokenId_) {
+                AppStorage storage s = LibAppStorage.diamondStorage();
         require(_index < s.ownerDuckIds[_owner].length, "DuckFacet: index beyond owner balance");
         tokenId_ = s.ownerDuckIds[_owner][_index];
     }
@@ -81,7 +84,7 @@ contract DuckFacet is AccessControl {
      * @return tokenIds_ An array of unique identifiers for each owned NFT
      */
     function tokenIdsOfOwner(address _owner) external view returns (uint32[] memory tokenIds_) {
-        tokenIds_ = s.ownerDuckIds[_owner];
+        tokenIds_ = LibAppStorage.diamondStorage().ownerDuckIds[_owner];
     }
 
     /**
@@ -90,6 +93,7 @@ contract DuckFacet is AccessControl {
      * @return ducksInfos_ An array of structs, each containing comprehensive details of an owned NFT
      */
     function allDucksInfosOfOwner(address _owner) external view returns (DuckInfoDTO[] memory ducksInfos_) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 length = s.ownerDuckIds[_owner].length;
         ducksInfos_ = new DuckInfoDTO[](length);
         for (uint256 i; i < length; i++) {
@@ -103,6 +107,7 @@ contract DuckFacet is AccessControl {
      * @return owners_ An array of addresses corresponding to the owners of the queried NFTs
      */
     function batchOwnerOf(uint256[] calldata _tokenIds) external view returns (address[] memory owners_) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         owners_ = new address[](_tokenIds.length);
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             owners_[i] = s.ducks[_tokenIds[i]].owner;
@@ -117,7 +122,7 @@ contract DuckFacet is AccessControl {
      * @return owner_ The address of the NFT's current owner
      */
     function ownerOf(uint256 _tokenId) external view returns (address owner_) {
-        owner_ = s.ducks[_tokenId].owner;
+        owner_ = LibAppStorage.diamondStorage().ducks[_tokenId].owner;
         require(owner_ != address(0), "DuckFacet: invalid _tokenId");
     }
 
@@ -128,6 +133,7 @@ contract DuckFacet is AccessControl {
      * @return approved_ The currently approved address for this NFT, or the zero address if there is none
      */
     function getApproved(uint256 _tokenId) external view returns (address approved_) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         require(_tokenId < s.duckIds.length, "ERC721: tokenId is invalid");
         approved_ = s.approved[_tokenId];
     }
@@ -139,7 +145,7 @@ contract DuckFacet is AccessControl {
      * @return approved_ True if `_operator` is an approved operator for `_owner`, false otherwise
      */
     function isApprovedForAll(address _owner, address _operator) external view returns (bool approved_) {
-        approved_ = s.operators[_owner][_operator];
+        approved_ = LibAppStorage.diamondStorage().operators[_owner][_operator];
     }
 
     /**
@@ -149,7 +155,7 @@ contract DuckFacet is AccessControl {
      * @return approved_ True if `_operator` is an approved duck interaction operator, false otherwise
      */
     function isPetOperatorForAll(address _owner, address _operator) external view returns (bool approved_) {
-        approved_ = s.petOperators[_owner][_operator];
+        approved_ = LibAppStorage.diamondStorage().petOperators[_owner][_operator];
     }
 
     /**
@@ -216,6 +222,7 @@ contract DuckFacet is AccessControl {
      * @param _tokenId The NFT to approve
      */
     function approve(address _approved, uint256 _tokenId) external {
+        AppStorage storage s = LibAppStorage.diamondStorage();
         address owner = s.ducks[_tokenId].owner;
         require(owner == _msgSender() || s.operators[owner][_msgSender()], "ERC721: Not owner or operator of token.");
         s.approved[_tokenId] = _approved;
@@ -229,7 +236,7 @@ contract DuckFacet is AccessControl {
      * @param _approved True if the operator is approved, false to revoke approval
      */
     function setApprovalForAll(address _operator, bool _approved) external {
-        s.operators[_msgSender()][_operator] = _approved;
+        LibAppStorage.diamondStorage().operators[_msgSender()][_operator] = _approved;
         emit LibERC721.ApprovalForAll(_msgSender(), _operator, _approved);
     }
 
@@ -238,7 +245,7 @@ contract DuckFacet is AccessControl {
      * @return The name of the token collection
      */
     function name() external view returns (string memory) {
-        return s.name;
+        return LibAppStorage.diamondStorage().name;
     }
 
     /**
@@ -246,7 +253,7 @@ contract DuckFacet is AccessControl {
      * @return The symbol of the token collection
      */
     function symbol() external view returns (string memory) {
-        return s.symbol;
+        return LibAppStorage.diamondStorage().symbol;
     }
 
     /**
