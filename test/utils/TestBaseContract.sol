@@ -18,6 +18,8 @@ abstract contract TestBaseContract is Test {
     IDiamondProxy public diamond;
 
     test_ERC20 public quackToken;
+    test_ERC20 public tUSDC;
+    test_ERC20 public tWETH;
 
     function setUp() public virtual {
         // console2.log("\n -- Test Sepolia --\n");
@@ -41,6 +43,8 @@ abstract contract TestBaseContract is Test {
 
         // quackToken = IERC20(vm.envAddress("QUACK_TOKEN_ADDRESS_SEPOLIA"));
         quackToken = new test_ERC20(account0, 1000000000000000000, 18);
+        tUSDC = new test_ERC20(account0, 1000000000000000000, 6);
+        tWETH = new test_ERC20(account0, 1000000000000000000, 18);
 
         // console2.log("Deploy diamond");
         diamond = IDiamondProxy(address(new DiamondProxy(account0)));

@@ -268,11 +268,11 @@ library LibDuck {
         uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
         characteristics_ = new int16[](characteristicsCount);
         for (uint256 i; i < characteristicsCount; i++) {
-            console2.log("i", i);
+            // console2.log("i", i);
             int256 number = s.ducks[_tokenId].characteristics[uint16(i)];
-            console2.log("number", number);
+            // console2.log("number", number);
             int256 boost = s.ducks[_tokenId].temporaryCharacteristicsBoosts[uint16(i)];
-            console2.log("boost", boost);
+            // console2.log("boost", boost);
 
             if (boost > 0 && boost > boostDecay) {
                 number += boost - boostDecay;
@@ -396,7 +396,11 @@ library LibDuck {
     // Utils
     /////////////////////////////////////////////////////////////////////////////////
 
-    function getCharacteristicsArray(DuckInfo storage duckInfo) internal view returns (int16[] memory characteristicsArray_) {
+    function getCharacteristicsArray(DuckInfo storage duckInfo)
+        internal
+        view
+        returns (int16[] memory characteristicsArray_)
+    {
         uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
         characteristicsArray_ = new int16[](characteristicsCount);
 
@@ -405,7 +409,11 @@ library LibDuck {
         }
     }
 
-    function getModifiersArray(CollateralTypeInfo storage collateral) internal view returns (int16[] memory modifiersArray_) {
+    function getModifiersArray(CollateralTypeInfo storage collateral)
+        internal
+        view
+        returns (int16[] memory modifiersArray_)
+    {
         uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
         modifiersArray_ = new int16[](characteristicsCount);
 
@@ -423,7 +431,11 @@ library LibDuck {
         }
     }
 
-    function getEquippedWearablesArray(DuckInfo storage duckInfo) internal view returns (uint256[] memory wearablesArray_) {
+    function getEquippedWearablesArray(DuckInfo storage duckInfo)
+        internal
+        view
+        returns (uint256[] memory wearablesArray_)
+    {
         // TODO : set total equipped wearable count
         // uint256 wearableCount = uint256(type(DuckCharacteristicsType).max) + 1;
         uint256 wearableCount = 16;

@@ -6,13 +6,14 @@ import {TestBaseContract, console2} from "./utils/TestBaseContract.sol";
 import {Cycle, DuckStatusType, DuckInfo, DuckInfoDTO, EggDuckTraitsDTO} from "../src/shared/Structs_Ducks.sol";
 import {CollateralTypeDTO, CollateralTypeInfo} from "../src/shared/Structs.sol";
 
-contract ProtocolTest is TestBaseContract {
+contract TestDuck is TestBaseContract {
     uint256 cycleId;
     Cycle cycle;
-
+    int16[] quackModifiers;
     ///////////////////////////////////////////////////////////////////////////////////
     // Utils
     ///////////////////////////////////////////////////////////////////////////////////
+
     function util_createCycle(uint24 _cycleMaxSize, uint256 _eggPrice, uint256 _bodyColorItemId) internal {
         uint256 createdId = diamond.createCycle(_cycleMaxSize, _eggPrice, _bodyColorItemId);
         (cycleId, cycle) = diamond.currentCycle();
@@ -21,61 +22,6 @@ contract ProtocolTest is TestBaseContract {
         assertEq(cycle.eggsPrice, _eggPrice, "util_createCycle: Invalid Egg Price");
         assertEq(cycle.totalCount, 0, "util_createCycle: Invalid Total Count");
         assertEq(cycle.bodyColorItemId, _bodyColorItemId, "util_createCycle: Invalid Body Color Item Id");
-    }
-
-    function util_addCollateral(uint256 _cycleId, CollateralTypeDTO[] memory _collateralTypes) internal {
-        uint256 initialCollateralCount = diamond.getCycleCollateralsAddresses(_cycleId).length;
-
-        diamond.addCollateralTypes(_cycleId, _collateralTypes);
-
-        uint256 updatedCollateralCount = diamond.getCycleCollateralsAddresses(_cycleId).length;
-        assertEq(
-            updatedCollateralCount,
-            initialCollateralCount + _collateralTypes.length,
-            "util_addCollateral: Collateral types not added correctly"
-        );
-
-        for (uint256 i = 0; i < _collateralTypes.length; i++) {
-            CollateralTypeDTO memory addedCollateral =
-                diamond.getCycleCollateralInfo(_cycleId, initialCollateralCount + i);
-            assertEq(
-                addedCollateral.collateralType,
-                _collateralTypes[i].collateralType,
-                "util_addCollateral: Incorrect collateral address"
-            );
-            assertEq(
-                addedCollateral.delisted,
-                _collateralTypes[i].delisted,
-                "util_addCollateral: Incorrect collateral delisted status"
-            );
-
-            assertEq(
-                addedCollateral.primaryColor,
-                _collateralTypes[i].primaryColor,
-                "util_addCollateral: Incorrect collateral primary color"
-            );
-
-            assertEq(
-                addedCollateral.secondaryColor,
-                _collateralTypes[i].secondaryColor,
-                "util_addCollateral: Incorrect collateral secondary color"
-            );
-
-            // Verify modifiers
-            for (uint256 j = 0; j < _collateralTypes[i].modifiers.length; j++) {
-                assertEq(
-                    addedCollateral.modifiers[j],
-                    _collateralTypes[i].modifiers[j],
-                    "util_addCollateral: Incorrect modifier value"
-                );
-                // assertTrue(
-                //     addedCollateral.modifiers[j] == 2 || addedCollateral.modifiers[j] == 1
-                //         || addedCollateral.modifiers[j] == -1 || addedCollateral.modifiers[j] == -2,
-                //     "Invalid modifier value"
-                // );
-                assertTrue(addedCollateral.modifiers[j] == _collateralTypes[i].modifiers[j], "Invalid modifier value");
-            }
-        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////
@@ -89,26 +35,24 @@ contract ProtocolTest is TestBaseContract {
         util_createCycle(1000, 1, 0);
 
         // add QUACK as collateral to first cycle
-        // Define modifiers as int16[]
-        int16[] memory modifiers = new int16[](6);
-        modifiers[0] = -2;
-        modifiers[1] = 1;
-        modifiers[2] = 2;
-        modifiers[3] = 1;
-        modifiers[4] = 0;
-        modifiers[5] = -1;
-
+        quackModifiers = new int16[](6);
+        quackModifiers[0] = -2;
+        quackModifiers[1] = 1;
+        quackModifiers[2] = 2;
+        quackModifiers[3] = 1;
+        quackModifiers[4] = 0;
+        quackModifiers[5] = -1;
         // Create a dynamic array of CollateralTypeDTO
         CollateralTypeDTO[] memory collateralTypes = new CollateralTypeDTO[](1);
         collateralTypes[0] =
-            CollateralTypeDTO(address(quackToken), modifiers, bytes3(0x000000), bytes3(0x000000), false);
+            CollateralTypeDTO(address(quackToken), quackModifiers, bytes3(0x000000), bytes3(0x000000), false);
 
         // Add collateral
-        util_addCollateral(cycleId, collateralTypes);
+        diamond.addCollateralTypes(cycleId, collateralTypes);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////
-    // Tests
+    // Tests Ducks
     ///////////////////////////////////////////////////////////////////////////////////
     function testBasicEggsMint() public {
         uint256 initialBalance = quackToken.balanceOf(account0);

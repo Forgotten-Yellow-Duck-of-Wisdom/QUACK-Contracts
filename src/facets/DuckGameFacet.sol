@@ -15,6 +15,13 @@ import {LibMaths} from "../libs/LibMaths.sol";
  * Duck Game Facet -
  */
 contract DuckGameFacet is AccessControl {
+        event BuyEggs(
+        address indexed _from,
+        address indexed _to,
+        uint256 _duckId,
+        uint256 _price
+    );
+
     // TODO : 1 or more egg can be purchased ?
     ///@notice Allow an address to purchase a duck egg
     ///@param _to Address to send the egg once purchased
@@ -32,18 +39,17 @@ contract DuckGameFacet is AccessControl {
         s.cycles[currentCycleId].totalCount = uint24(cycleCount);
         uint32 duckId = s.duckIdCounter;
         duckId_ = duckId;
-        // emit BuyEggs(sender, _to, duckId, price);
+        emit BuyEggs(sender, _to, duckId, price);
         s.ducks[duckId].owner = _to;
         s.ducks[duckId].cycleId = uint16(currentCycleId);
         s.duckIdIndexes[duckId] = s.duckIds.length;
         s.duckIds.push(duckId);
         s.ownerDuckIdIndexes[_to][duckId] = s.ownerDuckIds[_to].length;
         s.ownerDuckIds[_to].push(duckId);
-        // emit LibERC721.Transfer(address(0), _to, duckId);
+        emit LibERC721.Transfer(address(0), _to, duckId);
         duckId++;
         s.duckIdCounter = duckId;
 
-        // LibDuck.verify(duckId);
         LibERC20.safeTransferFrom(address(s.quackTokenAddress), sender, address(this), price);
         // LibDuck.purchase(sender, totalPrice);
     }

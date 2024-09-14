@@ -11,22 +11,29 @@ import {LibString} from "../libs/LibString.sol";
 
 /**
  * @title Duck Facet
- * @dev ERC721 implementation representing user-owned digital ducks
+ * @dev ERC721 implementation representing user-owned digital ducks.
+ *      Handles NFT enumeration, ownership queries, and transfer functionalities.
  */
 contract DuckFacet is AccessControl {
     /**
-     * @notice Retrieve the total quantity of minted NFTs
-     * @return totalSupply_ The aggregate count of all NFTs ever created
+     * @notice Retrieve the total quantity of minted NFTs.
+     * @return totalSupply_ The aggregate count of all NFTs ever created.
+     *
+     * @custom:dev This function accesses the `duckIds` array from the AppStorage
+     * to determine the total number of Ducks minted.
      */
     function totalSupply() external view returns (uint256 totalSupply_) {
         totalSupply_ = LibAppStorage.diamondStorage().duckIds.length;
     }
 
     /**
-     * @notice Enumerate NFTs assigned to a specific owner
-     * @dev Throws an exception for queries about the zero address
-     * @param _owner The address of the NFT holder
-     * @return balance_ The quantity of NFTs owned by the specified address
+     * @notice Enumerate NFTs assigned to a specific owner.
+     * @dev Throws an exception if queried for the zero address.
+     * @param _owner The address of the NFT holder.
+     * @return balance_ The quantity of NFTs owned by the specified address.
+     *
+     * @custom:dev This function accesses the `ownerDuckIds` mapping from AppStorage
+     * to fetch the list of Ducks owned by `_owner`.
      */
     function balanceOf(address _owner) external view returns (uint256 balance_) {
         require(_owner != address(0), "DuckFacet: _owner can't be address(0)");
@@ -34,29 +41,38 @@ contract DuckFacet is AccessControl {
     }
 
     /**
-     * @notice Fetch comprehensive information about a specific NFT
-     * @param _tokenId The unique identifier of the NFT
-     * @return duckInfo_ A struct encapsulating all relevant details of the NFT
+     * @notice Fetch comprehensive information about a specific NFT.
+     * @param _tokenId The unique identifier of the NFT.
+     * @return duckInfo_ A `DuckInfoDTO` struct encapsulating all relevant details of the NFT.
+     *
+     * @custom:dev This function leverages the `LibDuck` library to retrieve detailed information
+     * about the Duck associated with `_tokenId`.
      */
     function getDuckInfo(uint256 _tokenId) external view returns (DuckInfoDTO memory duckInfo_) {
         duckInfo_ = LibDuck.getDuckInfo(_tokenId);
     }
 
     /**
-     * @notice Retrieve the timestamp when an NFT was claimed
-     * @dev Returns zero for unclaimed portals
-     * @param _tokenId The unique identifier of the NFT
-     * @return hatchTime_ The Unix timestamp of the NFT's claim
+     * @notice Retrieve the timestamp when an NFT was claimed.
+     * @dev Returns zero for unclaimed portals.
+     * @param _tokenId The unique identifier of the NFT.
+     * @return hatchTime_ The Unix timestamp of the NFT's claim.
+     *
+     * @custom:dev This function accesses the `ducks` mapping from AppStorage to fetch
+     * the `hatchTime` of the specified Duck.
      */
     function duckHatchTime(uint256 _tokenId) external view returns (uint256 hatchTime_) {
         hatchTime_ = LibAppStorage.diamondStorage().ducks[_tokenId].hatchTime;
     }
 
     /**
-     * @notice Enumerate valid NFTs by index
-     * @dev Throws if `_index` is greater than or equal to `totalSupply()`
-     * @param _index A number less than the total supply
-     * @return tokenId_ The unique identifier of the NFT at the specified index
+     * @notice Enumerate valid NFTs by index.
+     * @dev Throws if `_index` is greater than or equal to `totalSupply()`.
+     * @param _index A number less than the total supply.
+     * @return tokenId_ The unique identifier of the NFT at the specified index.
+     *
+     * @custom:dev This function accesses the `duckIds` array from AppStorage to fetch
+     * the token ID at the given index.
      */
     function tokenByIndex(uint256 _index) external view returns (uint256 tokenId_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
@@ -65,11 +81,11 @@ contract DuckFacet is AccessControl {
     }
 
     /**
-     * @notice List NFTs owned by an address, indexed by position
-     * @dev Throws for invalid indices or zero address queries
-     * @param _owner The address of interest
-     * @param _index A number less than the owner's balance
-     * @return tokenId_ The unique identifier of the NFT at the specified position in the owner's collection
+     * @notice List NFTs owned by an address, indexed by position.
+     * @dev Throws for invalid indices or zero address queries.
+     * @param _owner The address of interest.
+     * @param _index A number less than the owner's balance.
+     * @return tokenId_ The unique identifier of the NFT at the specified position in the owner's collection.
      */
     function tokenOfOwnerByIndex(address _owner, uint256 _index) external view returns (uint256 tokenId_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
@@ -78,18 +94,21 @@ contract DuckFacet is AccessControl {
     }
 
     /**
-     * @notice Fetch all NFT identifiers owned by a specific address
-     * @param _owner The address to query
-     * @return tokenIds_ An array of unique identifiers for each owned NFT
+     * @notice Fetch all NFT identifiers owned by a specific address.
+     * @param _owner The address to query.
+     * @return tokenIds_ An array of unique identifiers for each owned NFT.
      */
     function tokenIdsOfOwner(address _owner) external view returns (uint32[] memory tokenIds_) {
         tokenIds_ = LibAppStorage.diamondStorage().ownerDuckIds[_owner];
     }
 
     /**
-     * @notice Retrieve detailed information for all NFTs owned by an address
-     * @param _owner The address to query
-     * @return ducksInfos_ An array of structs, each containing comprehensive details of an owned NFT
+     * @notice Retrieve detailed information for all NFTs owned by an address.
+     * @param _owner The address to query.
+     * @return ducksInfos_ An array of `DuckInfoDTO` structs, each containing comprehensive details of an owned NFT.
+     *
+     * @custom:dev This function iterates through the Ducks owned by `_owner` and utilizes the `LibDuck` library
+     * to gather detailed information for each Duck.
      */
     function allDucksInfosOfOwner(address _owner) external view returns (DuckInfoDTO[] memory ducksInfos_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
@@ -158,12 +177,12 @@ contract DuckFacet is AccessControl {
     }
 
     /**
-     * @notice Securely transfer ownership of an NFT
-     * @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved address for this NFT
-     * @param _from The current owner of the NFT
-     * @param _to The new owner
-     * @param _tokenId The NFT to transfer
-     * @param _data Additional data with no specified format, sent in call to `_to`
+     * @notice Securely transfer ownership of an NFT.
+     * @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved address for this NFT.
+     * @param _from The current owner of the NFT.
+     * @param _to The new owner.
+     * @param _tokenId The NFT to transfer.
+     * @param _data Additional data with no specified format, sent in call to `_to`.
      */
     function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes calldata _data) external {
         address sender = _msgSender();
@@ -172,12 +191,12 @@ contract DuckFacet is AccessControl {
     }
 
     /**
-     * @notice Batch transfer multiple NFTs securely
-     * @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved address for all NFTs
-     * @param _from The current owner of the NFTs
-     * @param _to The new owner
-     * @param _tokenIds An array of NFT identifiers to transfer
-     * @param _data Additional data with no specified format, sent in call to `_to`
+     * @notice Batch transfer multiple NFTs securely.
+     * @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved address for all NFTs.
+     * @param _from The current owner of the NFTs.
+     * @param _to The new owner.
+     * @param _tokenIds An array of NFT identifiers to transfer.
+     * @param _data Additional data with no specified format, sent in call to `_to`.
      */
     function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _tokenIds, bytes calldata _data)
         external
@@ -191,11 +210,11 @@ contract DuckFacet is AccessControl {
     }
 
     /**
-     * @notice Securely transfer ownership of an NFT
-     * @dev Identical to the other function, but with no data parameter (sets data to "")
-     * @param _from The current owner of the NFT
-     * @param _to The new owner
-     * @param _tokenId The NFT to transfer
+     * @notice Securely transfer ownership of an NFT.
+     * @dev Identical to the other function, but without the `_data` parameter (sets data to "").
+     * @param _from The current owner of the NFT.
+     * @param _to The new owner.
+     * @param _tokenId The NFT to transfer.
      */
     function safeTransferFrom(address _from, address _to, uint256 _tokenId) external {
         address sender = _msgSender();
