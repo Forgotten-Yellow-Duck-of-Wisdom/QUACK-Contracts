@@ -4,6 +4,7 @@ pragma solidity >=0.8.21;
 import {MetaTxContextStorage, CollateralTypeInfo} from "../shared/Structs.sol";
 import {Cycle, DuckInfo} from "../shared/Structs_Ducks.sol";
 import {VRFV2PlusWrapperInterface} from "../interfaces/IVRFV2PlusWrapperInterface.sol";
+import {VersusGameScore} from "../shared/Structs_Game_QnQ.sol";
 
 struct AppStorage {
     /////////////////// Global Diamond ///////////////////
@@ -17,6 +18,7 @@ struct AppStorage {
     address treasuryAddress;
     address farmingAddress;
     address daoAddress;
+    address gameQnGAuthorityAddress;
     // Using 0x000000000000000000000000000000000000dEaD  as burn address.
     //
     /////////////////// Collateral ///////////////////
@@ -49,7 +51,7 @@ struct AppStorage {
     //
     /////////////////// Ducks - (ERC721) ///////////////////
     //
-    // Ducks XP 
+    // Ducks XP
     uint256 MAX_LEVEL;
     uint256 LEVEL_50_XP;
     // uint256 LEVEL_60_XP;
@@ -78,6 +80,12 @@ struct AppStorage {
     mapping(address => mapping(address => bool)) operators;
     //Pet operators for a token
     mapping(address => mapping(address => bool)) petOperators;
+    /////////////////// Game QnQ - ///////////////////
+    uint256 versusGameScoresCount;
+    mapping(uint256 => VersusGameScore) versusGameScores;
+    mapping(uint256 => uint256) versusGameScoresIdToIndex;
+    mapping(address => uint256) playersVersusGameScoreIndexes;
+    mapping(uint256 => uint256) ducksVersusGameScoreIndexes;
 }
 
 /////////////////// Item Factory - (ERC1155) ///////////////////

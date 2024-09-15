@@ -11,7 +11,7 @@ import {LibDuck} from "./LibDuck.sol";
 library LibChainlinkVRF {
     event RequestSent(uint256 requestId, uint32 numWords);
 
-// TODO : update requestRandomWords to receive a VRFExtraArgsV1 struct and handle different kind of VRF results
+    // TODO : update requestRandomWords to receive a VRFExtraArgsV1 struct and handle different kind of VRF results
     function requestRandomWords(uint256 _tokenId, uint256 _requestPrice) internal returns (uint256 requestId) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         s.ducks[_tokenId].status = DuckStatusType.VRF_PENDING;
@@ -47,6 +47,4 @@ library LibChainlinkVRF {
         // s.vrfRequests[_requestId].randomWords = _randomWords;
         LibDuck.openEggWithVRF(_requestId, _randomWords);
     }
-
-
 }

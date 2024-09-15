@@ -120,4 +120,12 @@ contract TestDuck is TestBaseContract {
         assertEq(uint256(duckInfo.status), uint256(DuckStatusType.DUCK), "Duck not hatched");
         assertEq(duckInfo.collateral, address(quackToken), "Duck not hatched");
     }
+
+    function testDuckLevel() public {
+        testBasicDuckHatching();
+        uint256[101] memory xpTable = diamond.xpTable();
+        for (uint256 i = 0; i < 101; i++) {
+            console2.log("XP Table Level", i, ":", xpTable[i]);
+        }
+    }
 }

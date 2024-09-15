@@ -16,12 +16,7 @@ import {LibChainlinkVRF} from "../libs/LibChainlinkVRF.sol";
  * Duck Game Facet -
  */
 contract DuckGameFacet is AccessControl {
-        event BuyEggs(
-        address indexed _from,
-        address indexed _to,
-        uint256 _duckId,
-        uint256 _price
-    );
+    event BuyEggs(address indexed _from, address indexed _to, uint256 _duckId, uint256 _price);
 
     event OpenEggs(uint256[] _tokenIds);
 
@@ -210,6 +205,9 @@ contract DuckGameFacet is AccessControl {
         requiredXp_ = LibDuck.getCumulativeXP(LibDuck.calculateLevel(_experience) + 1) - _experience;
     }
 
+    function xpTable() external view returns (uint256[101] memory xpTable_) {
+        xpTable_ = LibAppStorage.diamondStorage().XP_TABLE;
+    }
     // TODO : rework or fetch for global duck infos
     // ///@notice Compute the rarity multiplier of an NFT
     // ///@dev Only valid for claimed Ducks

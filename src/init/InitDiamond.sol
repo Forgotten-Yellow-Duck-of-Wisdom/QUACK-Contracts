@@ -4,6 +4,7 @@ pragma solidity >=0.8.21;
 import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
 import {VRFV2PlusWrapperInterface} from "../interfaces/IVRFV2PlusWrapperInterface.sol";
 import {AccessControl} from "../shared/AccessControl.sol";
+import {console2} from "forge-std/console2.sol";
 
 error DiamondAlreadyInitialized();
 
@@ -16,6 +17,7 @@ contract InitDiamond is AccessControl {
         address _farmingAddress,
         address _daoAddress,
         address _chainlinkVrfWrapper,
+        address _gameQnGAuthorityAddress,
         uint32 _vrfCallbackGasLimit,
         uint16 _vrfRequestConfirmations,
         uint32 _vrfNumWords
@@ -34,6 +36,7 @@ contract InitDiamond is AccessControl {
         s.treasuryAddress = _treasuryAddress;
         s.farmingAddress = _farmingAddress;
         s.daoAddress = _daoAddress;
+        s.gameQnGAuthorityAddress = _gameQnGAuthorityAddress;
 
         s.chainlink_vrf_wrapper = VRFV2PlusWrapperInterface(_chainlinkVrfWrapper);
         s.vrfCallbackGasLimit = _vrfCallbackGasLimit;
@@ -61,23 +64,22 @@ contract InitDiamond is AccessControl {
 
         uint256[] memory tempXpTable = new uint256[](MAX_LEVEL + 1);
         tempXpTable[0] = 0;
+        tempXpTable[1] = 100;
 
         // Fixed-point scaling factor (1e18 for precision)
         uint256 SCALE = 1e18;
 
         // Define base multipliers in fixed-point (e.g., 1.15 = 115 * 1e16)
-    uint256 baseMultiplier115 = 115 * 1e16; // Represents 1.15 with 18 decimals
-     uint256 baseMultiplier120 = 120 * 1e16; // Represents 1.20 with 18 decimals
+        uint256 baseMultiplier115 = 115 * 1e16; // Represents 1.15 with 18 decimals
+        uint256 baseMultiplier120 = 120 * 1e16; // Represents 1.20 with 18 decimals
 
         // Calculate XP for levels 1-50 with exponential growth factor 1.15
-        for (uint8 level = 1; level <= 50; level++) {
-            if (level == 1) {
-                tempXpTable[level] = 100;
-            } else {
-                uint256 previousXp = tempXpTable[level - 1];
-                uint256 xp = (previousXp * baseMultiplier115) / SCALE;
-                tempXpTable[level] = xp;
-            }
+        for (uint8 level = 2; level <= 50; level++) {
+            uint256 previousXp = tempXpTable[level - 1];
+            console2.log("Previous XP:", previousXp);
+            uint256 xp = (previousXp * baseMultiplier115) / SCALE;
+            console2.log("XP for level", level, ":", xp);
+            tempXpTable[level] = xp;
         }
 
         // Calculate XP for levels 51-100 with exponential growth factor 1.20
@@ -109,6 +111,7 @@ contract InitDiamond is AccessControl {
 
         // Assign the calculated XP values to storage XP_TABLE
         for (uint8 level = 1; level <= MAX_LEVEL; level++) {
+            console2.log("XP for level", level, ":", tempXpTable[level]);
             s.XP_TABLE[level] = tempXpTable[level];
         }
     }

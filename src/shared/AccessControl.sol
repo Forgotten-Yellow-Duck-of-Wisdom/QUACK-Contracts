@@ -43,4 +43,12 @@ abstract contract AccessControl is MetaContext {
         );
         _;
     }
+
+    modifier onlyGameQnG() {
+        require(
+            _msgSender() == LibAppStorage.diamondStorage().gameQnGAuthorityAddress,
+            "LibAppStorage: Only callable by GameQnGAuthority contract"
+        );
+        _;
+    }
 }

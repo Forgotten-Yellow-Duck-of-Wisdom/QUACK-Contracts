@@ -105,7 +105,7 @@ library LibDuck {
         // emit SetDuckName(_tokenId, existingName, _name);
     }
 
-        function interact(uint256 _tokenId) internal returns (bool) {
+    function interact(uint256 _tokenId) internal returns (bool) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 lastInteracted = s.ducks[_tokenId].lastInteracted;
         // if interacted less than 12 hours ago
@@ -276,7 +276,7 @@ library LibDuck {
     ///////////////////////////////////////////
     // New Version XP calculation
 
-        /**
+    /**
      * @notice Adds XP to a Duck and updates its level accordingly.
      * @param _tokenId The duckId to update.
      * @param xp The amount of XP to add.
@@ -293,8 +293,7 @@ library LibDuck {
         }
     }
 
-
-        /**
+    /**
      * @notice Retrieves the cumulative XP required for a specific level.
      * @param level The level for which to retrieve the XP requirement.
      * @return xp The cumulative XP required to reach the given level.
@@ -334,7 +333,6 @@ library LibDuck {
         return s.MAX_LEVEL;
     }
     ///////////////////////////////////////////
-
 
     //Only valid for claimed Ducks
     function modifiedCharacteristicsAndRarityScore(uint256 _tokenId)
@@ -434,8 +432,6 @@ library LibDuck {
         // TODO : until no minimum stake fixed, set to 1
         singleEggDuckTraits_.minimumStake = 1;
     }
-
-
 
     ///@notice Query the available skill points that can be used for an NFT
     ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used

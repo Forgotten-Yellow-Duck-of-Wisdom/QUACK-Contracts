@@ -160,7 +160,6 @@ contract AdminFacet is AccessControl {
     //     s.collateralTypeInfo[_collateralType].modifiers = _modifiers;
     // }
 
-
     // TODO : wip level up mecanism
     // /**
     //  * @notice Grants experience points (XP) to multiple Ducks.

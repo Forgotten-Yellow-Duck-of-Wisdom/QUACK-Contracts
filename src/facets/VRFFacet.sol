@@ -8,8 +8,6 @@ import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
 import {LibChainlinkVRF} from "../libs/LibChainlinkVRF.sol";
 
 contract VrfFacet is AccessControl {
-
-
     function getVRFRequestPrice() external view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         return s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit, s.vrfNumWords);
@@ -22,7 +20,7 @@ contract VrfFacet is AccessControl {
     //    * @param _randomWords is the randomness result.
     //    */
     function rawFulfillRandomWords(uint256 _requestId, uint256[] memory _randomWords) external {
-       LibChainlinkVRF.handleVRFResult(_requestId, _randomWords, _msgSender());
+        LibChainlinkVRF.handleVRFResult(_requestId, _randomWords, _msgSender());
     }
 
     receive() external payable {}
