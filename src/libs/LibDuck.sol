@@ -230,7 +230,9 @@ library LibDuck {
             duckInfo_.kinship = kinship(_tokenId);
             duckInfo_.lastInteracted = s.ducks[_tokenId].lastInteracted;
             duckInfo_.experience = s.ducks[_tokenId].experience;
+            console2.log("actualDuckLevel", actualDuckLevel, "xp", s.ducks[_tokenId].experience);
             duckInfo_.toNextLevel = getCumulativeXP(actualDuckLevel + 1) - s.ducks[_tokenId].experience;
+            // duckInfo_.toNextLevel = actualDuckLevel == s.MAX_LEVEL ? 0 : getCumulativeXP(actualDuckLevel + 1) - s.ducks[_tokenId].experience;
             duckInfo_.level = actualDuckLevel;
             duckInfo_.usedSkillPoints = s.ducks[_tokenId].usedSkillPoints;
             duckInfo_.characteristics = characteristics;

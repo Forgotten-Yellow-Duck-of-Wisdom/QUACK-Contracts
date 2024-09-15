@@ -86,6 +86,9 @@ struct AppStorage {
     mapping(uint256 => uint256) versusGameScoresIdToIndex;
     mapping(address => uint256) playersVersusGameScoreIndexes;
     mapping(uint256 => uint256) ducksVersusGameScoreIndexes;
+    uint256 tournamentGameScoresCount;
+    mapping(uint256 => TournamentGameScore) tournamentGameScores;
+    mapping(uint256 => uint256) tournamentGameScoresIdToIndex;
 }
 
 /////////////////// Item Factory - (ERC1155) ///////////////////

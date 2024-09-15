@@ -26,3 +26,5 @@ broadcast/
 gemforge.deployments.json
 
 lib
+
+.idea.md
