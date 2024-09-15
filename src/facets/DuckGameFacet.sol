@@ -198,16 +198,16 @@ contract DuckGameFacet is AccessControl {
     ///@dev Only valid for claimed Ducks
     ///@param _experience the current XP gathered by an NFT
     ///@return level_ The level of an NFT with experience `_experience`
-    function duckLevel(uint256 _experience) external pure returns (uint256 level_) {
-        level_ = LibDuck.duckLevel(_experience);
+    function duckLevel(uint256 _experience) external view returns (uint256 level_) {
+        level_ = LibDuck.calculateLevel(_experience);
     }
 
     ///@notice Calculate the XP needed for an NFT to advance to the next level
     ///@dev Only valid for claimed Ducks
     ///@param _experience The current XP points gathered by an NFT
     ///@return requiredXp_ The XP required for the NFT to move to the next level
-    function xpUntilNextLevel(uint256 _experience) external pure returns (uint256 requiredXp_) {
-        requiredXp_ = LibDuck.xpUntilNextLevel(_experience);
+    function xpUntilNextLevel(uint256 _experience) external view returns (uint256 requiredXp_) {
+        requiredXp_ = LibDuck.getCumulativeXP(LibDuck.calculateLevel(_experience) + 1) - _experience;
     }
 
     // TODO : rework or fetch for global duck infos

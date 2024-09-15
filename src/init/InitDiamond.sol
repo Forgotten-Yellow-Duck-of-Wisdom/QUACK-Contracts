@@ -42,7 +42,7 @@ contract InitDiamond is AccessControl {
 
         // Initialize XP Table
         initializeXPTable(s);
-        
+
         emit InitializeDiamond(msg.sender);
     }
 
@@ -66,8 +66,8 @@ contract InitDiamond is AccessControl {
         uint256 SCALE = 1e18;
 
         // Define base multipliers in fixed-point (e.g., 1.15 = 115 * 1e16)
-        uint256 baseExp1_15 = 115 * 1e16; // 1.15 * 1e18
-        uint256 baseExp1_20 = 120 * 1e16; // 1.20 * 1e18
+    uint256 baseMultiplier115 = 115 * 1e16; // Represents 1.15 with 18 decimals
+     uint256 baseMultiplier120 = 120 * 1e16; // Represents 1.20 with 18 decimals
 
         // Calculate XP for levels 1-50 with exponential growth factor 1.15
         for (uint8 level = 1; level <= 50; level++) {
@@ -75,7 +75,7 @@ contract InitDiamond is AccessControl {
                 tempXpTable[level] = 100;
             } else {
                 uint256 previousXp = tempXpTable[level - 1];
-                uint256 xp = (previousXp * baseExp1_15) / SCALE;
+                uint256 xp = (previousXp * baseMultiplier115) / SCALE;
                 tempXpTable[level] = xp;
             }
         }
@@ -86,7 +86,7 @@ contract InitDiamond is AccessControl {
                 tempXpTable[level] = LEVEL_50_XP;
             } else {
                 uint256 previousXp = tempXpTable[level - 1];
-                uint256 xp = (previousXp * baseExp1_20) / SCALE;
+                uint256 xp = (previousXp * baseMultiplier120) / SCALE;
                 tempXpTable[level] = xp;
             }
         }

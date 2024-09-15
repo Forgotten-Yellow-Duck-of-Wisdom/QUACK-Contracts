@@ -51,7 +51,8 @@ struct AppStorage {
     //
     // Ducks XP 
     uint256 MAX_LEVEL;
-    uint256 LEVEL_60_XP;
+    uint256 LEVEL_50_XP;
+    // uint256 LEVEL_60_XP;
     uint256 LEVEL_100_XP;
     uint256[101] XP_TABLE;
     // global duck collection info

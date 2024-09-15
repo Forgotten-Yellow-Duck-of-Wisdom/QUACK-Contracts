@@ -39,8 +39,10 @@ library LibChainlinkVRF {
     }
 
     // TODO : update handleVRFResult to receive different kind of VRF results and assign incoming request to the right action
-    function handleVRFResult(uint256 _requestId, uint256[] memory _randomWords) internal {
-        // AppStorage storage s = LibAppStorage.diamondStorage();
+    function handleVRFResult(uint256 _requestId, uint256[] memory _randomWords, address _sender) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        require(_sender == address(s.chainlink_vrf_wrapper), "only VRF V2 Plus wrapper can fulfill");
+
         // s.vrfRequests[_requestId].fulfilled = true;
         // s.vrfRequests[_requestId].randomWords = _randomWords;
         LibDuck.openEggWithVRF(_requestId, _randomWords);
