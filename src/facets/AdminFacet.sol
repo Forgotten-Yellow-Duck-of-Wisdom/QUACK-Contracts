@@ -160,28 +160,30 @@ contract AdminFacet is AccessControl {
     //     s.collateralTypeInfo[_collateralType].modifiers = _modifiers;
     // }
 
-    /**
-     * @notice Grants experience points (XP) to multiple Ducks.
-     * @dev Only callable by an admin. Each Duck must be a claimed Duck. The XP granted to each Duck cannot exceed 1000 at a time.
-     * @param _tokenIds An array of Duck token IDs to which XP will be granted.
-     * @param _xpValues An array of XP values corresponding to each Duck in _tokenIds.
-     *
-     * @custom:dev This function iterates through the provided _tokenIds and _xpValues arrays,
-     * ensuring they are of equal length and that each XP value does not exceed the maximum allowed.
-     * It then increments the experience points of each specified Duck accordingly.
-     * Emits a GrantExperience event for each successful XP grant.
-     */
-    function grantExperience(uint256[] calldata _tokenIds, uint256[] calldata _xpValues) external isAdmin {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        require(_tokenIds.length == _xpValues.length, "AdminFacet: IDs must match XP array length");
-        for (uint256 i; i < _tokenIds.length; i++) {
-            uint256 tokenId = _tokenIds[i];
-            uint256 xp = _xpValues[i];
-            require(xp <= 1000, "AdminFacet: Cannot grant more than 1000 XP at a time");
 
-            s.ducks[tokenId].experience += xp;
-        }
-        // TODO: wip events / libXP/drop
-        // emit LibXPAllocation.GrantExperience(_tokenIds, _xpValues);
-    }
+    // TODO : wip level up mecanism
+    // /**
+    //  * @notice Grants experience points (XP) to multiple Ducks.
+    //  * @dev Only callable by an admin. Each Duck must be a claimed Duck. The XP granted to each Duck cannot exceed 1000 at a time.
+    //  * @param _tokenIds An array of Duck token IDs to which XP will be granted.
+    //  * @param _xpValues An array of XP values corresponding to each Duck in _tokenIds.
+    //  *
+    //  * @custom:dev This function iterates through the provided _tokenIds and _xpValues arrays,
+    //  * ensuring they are of equal length and that each XP value does not exceed the maximum allowed.
+    //  * It then increments the experience points of each specified Duck accordingly.
+    //  * Emits a GrantExperience event for each successful XP grant.
+    //  */
+    // function grantExperience(uint256[] calldata _tokenIds, uint256[] calldata _xpValues) external isAdmin {
+    //     AppStorage storage s = LibAppStorage.diamondStorage();
+    //     require(_tokenIds.length == _xpValues.length, "AdminFacet: IDs must match XP array length");
+    //     for (uint256 i; i < _tokenIds.length; i++) {
+    //         uint256 tokenId = _tokenIds[i];
+    //         uint256 xp = _xpValues[i];
+    //         require(xp <= 1000, "AdminFacet: Cannot grant more than 1000 XP at a time");
+
+    //         s.ducks[tokenId].experience += xp;
+    //     }
+    //     // TODO: wip events / libXP/drop
+    //     // emit LibXPAllocation.GrantExperience(_tokenIds, _xpValues);
+    // }
 }

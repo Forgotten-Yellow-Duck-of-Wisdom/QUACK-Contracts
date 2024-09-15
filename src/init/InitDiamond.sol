@@ -40,6 +40,76 @@ contract InitDiamond is AccessControl {
         s.vrfRequestConfirmations = _vrfRequestConfirmations;
         s.vrfNumWords = _vrfNumWords;
 
+        // Initialize XP Table
+        initializeXPTable(s);
+        
         emit InitializeDiamond(msg.sender);
+    }
+
+    /**
+     * @notice Initializes the XP_TABLE in storage based on exponential growth factors.
+     * @param s The storage reference from AppStorage.
+     */
+    function initializeXPTable(AppStorage storage s) internal {
+        uint256 MAX_LEVEL = 100;
+        uint256 LEVEL_50_XP = 1_000_000;
+        uint256 LEVEL_100_XP = 100_000_000;
+
+        s.MAX_LEVEL = MAX_LEVEL;
+        s.LEVEL_50_XP = LEVEL_50_XP;
+        s.LEVEL_100_XP = LEVEL_100_XP;
+
+        uint256[] memory tempXpTable = new uint256[](MAX_LEVEL + 1);
+        tempXpTable[0] = 0;
+
+        // Fixed-point scaling factor (1e18 for precision)
+        uint256 SCALE = 1e18;
+
+        // Define base multipliers in fixed-point (e.g., 1.15 = 115 * 1e16)
+        uint256 baseExp1_15 = 115 * 1e16; // 1.15 * 1e18
+        uint256 baseExp1_20 = 120 * 1e16; // 1.20 * 1e18
+
+        // Calculate XP for levels 1-50 with exponential growth factor 1.15
+        for (uint8 level = 1; level <= 50; level++) {
+            if (level == 1) {
+                tempXpTable[level] = 100;
+            } else {
+                uint256 previousXp = tempXpTable[level - 1];
+                uint256 xp = (previousXp * baseExp1_15) / SCALE;
+                tempXpTable[level] = xp;
+            }
+        }
+
+        // Calculate XP for levels 51-100 with exponential growth factor 1.20
+        for (uint8 level = 51; level <= MAX_LEVEL; level++) {
+            if (level == 51) {
+                tempXpTable[level] = LEVEL_50_XP;
+            } else {
+                uint256 previousXp = tempXpTable[level - 1];
+                uint256 xp = (previousXp * baseExp1_20) / SCALE;
+                tempXpTable[level] = xp;
+            }
+        }
+
+        // Compute cumulative XP
+        uint256 cumulativeXP = 0;
+        for (uint8 level = 1; level <= MAX_LEVEL; level++) {
+            cumulativeXP += tempXpTable[level];
+            tempXpTable[level] = cumulativeXP;
+        }
+
+        // Calculate scaling factor to set level 100 XP to LEVEL_100_XP
+        uint256 originalLevel100XP = tempXpTable[MAX_LEVEL];
+        uint256 scaleFactor = (LEVEL_100_XP * SCALE) / originalLevel100XP;
+
+        // Apply scaling factor to all levels
+        for (uint8 level = 1; level <= MAX_LEVEL; level++) {
+            tempXpTable[level] = (tempXpTable[level] * scaleFactor) / SCALE;
+        }
+
+        // Assign the calculated XP values to storage XP_TABLE
+        for (uint8 level = 1; level <= MAX_LEVEL; level++) {
+            s.XP_TABLE[level] = tempXpTable[level];
+        }
     }
 }

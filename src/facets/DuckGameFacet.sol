@@ -10,6 +10,7 @@ import {LibERC721} from "../libs/LibERC721.sol";
 import {LibERC20} from "../libs/LibERC20.sol";
 import {LibString} from "../libs/LibString.sol";
 import {LibMaths} from "../libs/LibMaths.sol";
+import {LibChainlinkVRF} from "../libs/LibChainlinkVRF.sol";
 
 /**
  * Duck Game Facet -
@@ -21,6 +22,12 @@ contract DuckGameFacet is AccessControl {
         uint256 _duckId,
         uint256 _price
     );
+
+    event OpenEggs(uint256[] _tokenIds);
+
+    ////////////////////////////////////////////////////////////
+    // WRITE FUNCTIONS
+    ///////////////////////////////////////////////////////////
 
     // TODO : 1 or more egg can be purchased ?
     ///@notice Allow an address to purchase a duck egg
@@ -53,6 +60,90 @@ contract DuckGameFacet is AccessControl {
         LibERC20.safeTransferFrom(address(s.quackTokenAddress), sender, address(this), price);
         // LibDuck.purchase(sender, totalPrice);
     }
+
+    function openEggs(uint256[] calldata _tokenIds) external payable {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        address owner = _msgSender();
+        uint256 requestPrice = s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit, s.vrfNumWords);
+        require(msg.value >= requestPrice * _tokenIds.length, "VRFFacet: Not enough native funds for chainlink VRF");
+        for (uint256 i; i < _tokenIds.length; i++) {
+            uint256 tokenId = _tokenIds[i];
+            require(s.ducks[tokenId].status == DuckStatusType.CLOSED_EGGS, "VRFFacet: Eggs is not closed");
+            require(owner == s.ducks[tokenId].owner, "VRFFacet: Only duck owner can open an egg");
+            require(s.ducks[tokenId].locked == false, "VRFFacet: Can't open eggs when it is locked");
+            LibChainlinkVRF.requestRandomWords(tokenId, requestPrice);
+        }
+        emit OpenEggs(_tokenIds);
+    }
+
+    ///@notice Allows the owner of an NFT(Portal) to claim an Duck provided it has been unlocked
+    ///@dev Will throw if the Portal(with identifier `_tokenid`) has not been opened(Unlocked) yet
+    ///@dev If the NFT(Portal) with identifier `_tokenId` is listed for sale on the baazaar while it is being unlocked, that listing is cancelled
+    ///@param _tokenId The identifier of NFT to claim an Duck from
+    ///@param _option The index of the Duck to claim(1-10)
+    ///@param _stakeAmount Minimum amount of collateral tokens needed to be sent to the new Duck escrow contract
+    function claimDuck(uint256 _tokenId, uint256 _option, uint256 _stakeAmount)
+        external
+        onlyUnlocked(_tokenId)
+        onlyDuckOwner(_tokenId)
+    {
+        LibDuck.claimDuck(_tokenId, _msgSender(), _option, _stakeAmount);
+    }
+
+    ///@notice Allows the owner of a NFT to set a name for it
+    ///@dev only valid for claimed Ducks
+    ///@dev Will throw if the name has been used for another claimed Duck
+    ///@param _tokenId the identifier if the NFT to name
+    ///@param _name Preferred name to give the claimed Duck
+    function setDuckName(uint256 _tokenId, string calldata _name)
+        external
+        onlyUnlocked(_tokenId)
+        onlyDuckOwner(_tokenId)
+    {
+        LibDuck.setDuckName(_tokenId, _name);
+    }
+
+    ///@notice Allow the owner of an NFT to interact with them.thereby increasing their kinship(petting)
+    ///@dev only valid for claimed ducks
+    ///@dev Kinship will only increase if the lastInteracted minus the current time is greater than or equal to 12 hours
+    ///@param _tokenIds An array containing the token identifiers of the claimed ducks that are to be interacted with
+    function interact(uint256[] calldata _tokenIds) external {
+        address sender = _msgSender();
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        for (uint256 i; i < _tokenIds.length; i++) {
+            uint256 tokenId = _tokenIds[i];
+            address owner = s.ducks[tokenId].owner;
+
+            require(
+                sender == owner || s.operators[owner][sender] || s.approved[tokenId] == sender
+                    || s.petOperators[owner][sender],
+                "DuckGameFacet: Not owner of token or approved"
+            );
+
+            require(s.ducks[tokenId].status == DuckStatusType.DUCK, "DuckGameFacet: Only valid for Duck");
+            LibDuck.interact(tokenId);
+        }
+    }
+
+    // TODO : wip characterisitcs
+    // ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
+    // ///@dev only valid for claimed ducks
+    // ///@param _tokenId The identifier of the NFT to spend the skill points on
+    // ///@param _values An array of four integers that represent the values of the skill points
+    // function spendSkillPoints(uint256 _tokenId, int16[4] calldata _values)
+    //     external
+    //     onlyUnlocked(_tokenId)
+    //     onlyDuckOwner(_tokenId)
+    // {
+    //     LibDuck.spendSkillPoints(_tokenId, _values);
+    // }
+
+    /// TODO : later upgrade
+    // function resetSkillPoints(uint32 _tokenId)
+
+    ////////////////////////////////////////////////////////////
+    // READ FUNCTIONS
+    ///////////////////////////////////////////////////////////
 
     ///@notice Check if a string `_name` has not been assigned to another NFT
     ///@param _name Name to check
@@ -200,74 +291,9 @@ contract DuckGameFacet is AccessControl {
         }
     }
 
-    ///@notice Allows the owner of an NFT(Portal) to claim an Duck provided it has been unlocked
-    ///@dev Will throw if the Portal(with identifier `_tokenid`) has not been opened(Unlocked) yet
-    ///@dev If the NFT(Portal) with identifier `_tokenId` is listed for sale on the baazaar while it is being unlocked, that listing is cancelled
-    ///@param _tokenId The identifier of NFT to claim an Duck from
-    ///@param _option The index of the Duck to claim(1-10)
-    ///@param _stakeAmount Minimum amount of collateral tokens needed to be sent to the new Duck escrow contract
-    function claimDuck(uint256 _tokenId, uint256 _option, uint256 _stakeAmount)
-        external
-        onlyUnlocked(_tokenId)
-        onlyDuckOwner(_tokenId)
-    {
-        LibDuck.claimDuck(_tokenId, _msgSender(), _option, _stakeAmount);
-    }
-
-    ///@notice Allows the owner of a NFT to set a name for it
-    ///@dev only valid for claimed Ducks
-    ///@dev Will throw if the name has been used for another claimed Duck
-    ///@param _tokenId the identifier if the NFT to name
-    ///@param _name Preferred name to give the claimed Duck
-    function setDuckName(uint256 _tokenId, string calldata _name)
-        external
-        onlyUnlocked(_tokenId)
-        onlyDuckOwner(_tokenId)
-    {
-        LibDuck.setDuckName(_tokenId, _name);
-    }
-
-    ///@notice Allow the owner of an NFT to interact with them.thereby increasing their kinship(petting)
-    ///@dev only valid for claimed ducks
-    ///@dev Kinship will only increase if the lastInteracted minus the current time is greater than or equal to 12 hours
-    ///@param _tokenIds An array containing the token identifiers of the claimed ducks that are to be interacted with
-    function interact(uint256[] calldata _tokenIds) external {
-        address sender = _msgSender();
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        for (uint256 i; i < _tokenIds.length; i++) {
-            uint256 tokenId = _tokenIds[i];
-            address owner = s.ducks[tokenId].owner;
-
-            require(
-                sender == owner || s.operators[owner][sender] || s.approved[tokenId] == sender
-                    || s.petOperators[owner][sender],
-                "DuckGameFacet: Not owner of token or approved"
-            );
-
-            require(s.ducks[tokenId].status == DuckStatusType.DUCK, "DuckGameFacet: Only valid for Duck");
-            LibDuck.interact(tokenId);
-        }
-    }
-
-    // TODO : wip characterisitcs
-    // ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
-    // ///@dev only valid for claimed ducks
-    // ///@param _tokenId The identifier of the NFT to spend the skill points on
-    // ///@param _values An array of four integers that represent the values of the skill points
-    // function spendSkillPoints(uint256 _tokenId, int16[4] calldata _values)
-    //     external
-    //     onlyUnlocked(_tokenId)
-    //     onlyDuckOwner(_tokenId)
-    // {
-    //     LibDuck.spendSkillPoints(_tokenId, _values);
-    // }
-
     function isDuckLocked(uint256 _tokenId) external view returns (bool isLocked) {
         isLocked = LibAppStorage.diamondStorage().ducks[_tokenId].locked;
     }
-
-    /// TODO : later upgrade
-    // function resetSkillPoints(uint32 _tokenId)
 
     function getDuckBaseCharacteristics(uint32 _tokenId) public view returns (int16[] memory characteristics_) {
         AppStorage storage s = LibAppStorage.diamondStorage();

@@ -23,55 +23,20 @@ import "forge-std/Test.sol";
 
 library LibDuck {
     event DuckInteract(uint256 indexed _tokenId, uint256 kinship);
+    event EggOpened(uint256 indexed tokenId);
 
-    function purchase(address _from, uint256 _quackAmount) internal {
+    ///////////////////////////////////////////
+    // MARK: Write functions
+    ///////////////////////////////////////////
+
+    function openEggWithVRF(uint256 _requestId, uint256[] memory _randomWords) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        uint256 share = (_quackAmount * 25) / 100;
+        uint256 tokenId = s.vrfRequestIdToTokenId[_requestId];
+        require(s.ducks[tokenId].status == DuckStatusType.VRF_PENDING, "VrfFacet: VRF is not pending");
+        s.ducks[tokenId].status = DuckStatusType.OPEN_EGG;
+        s.eggIdToRandomNumber[tokenId] = _randomWords[0];
 
-        // Using 0x000000000000000000000000000000000000dEaD  as burn address.
-        address quackTokenAddress = s.quackTokenAddress;
-        LibERC20.safeTransferFrom(quackTokenAddress, _from, address(0x000000000000000000000000000000000000dEaD), share);
-        LibERC20.safeTransferFrom(quackTokenAddress, _from, s.treasuryAddress, share);
-        LibERC20.safeTransferFrom(quackTokenAddress, _from, s.farmingAddress, share);
-        LibERC20.safeTransferFrom(quackTokenAddress, _from, s.daoAddress, share);
-    }
-
-    function internalTransferFrom(address _sender, address _from, address _to, uint256 _tokenId) internal {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-
-        require(_to != address(0), "DuckFacet: Can't transfer to 0 address");
-        require(_from != address(0), "DuckFacet: _from can't be 0 address");
-        require(_from == s.ducks[_tokenId].owner, "DuckFacet: _from is not owner, transfer failed");
-        require(
-            _sender == _from || s.operators[_from][_sender] || _sender == s.approved[_tokenId],
-            "DuckFacet: Not owner or approved to transfer"
-        );
-        transfer(_from, _to, _tokenId);
-        // LibERC721Marketplace.updateERC721Listing(address(this), _tokenId, _from);
-    }
-
-    function transfer(address _from, address _to, uint256 _tokenId) internal {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-
-        // remove
-        uint256 index = s.ownerDuckIdIndexes[_from][_tokenId];
-        uint256 lastIndex = s.ownerDuckIds[_from].length - 1;
-        if (index != lastIndex) {
-            uint32 lastTokenId = s.ownerDuckIds[_from][lastIndex];
-            s.ownerDuckIds[_from][index] = lastTokenId;
-            s.ownerDuckIdIndexes[_from][lastTokenId] = index;
-        }
-        s.ownerDuckIds[_from].pop();
-        delete s.ownerDuckIdIndexes[_from][_tokenId];
-        if (s.approved[_tokenId] != address(0)) {
-            delete s.approved[_tokenId];
-            emit LibERC721.Approval(_from, address(0), _tokenId);
-        }
-        // add
-        s.ducks[_tokenId].owner = _to;
-        s.ownerDuckIdIndexes[_to][_tokenId] = s.ownerDuckIds[_to].length;
-        s.ownerDuckIds[_to].push(uint32(_tokenId));
-        emit LibERC721.Transfer(_from, _to, _tokenId);
+        emit EggOpened(tokenId);
     }
 
     ///@notice Allows the owner of an NFT(Portal) to claim an Duck provided it has been unlocked
@@ -139,8 +104,110 @@ library LibDuck {
         // TODO : wip events
         // emit SetDuckName(_tokenId, existingName, _name);
     }
+
+        function interact(uint256 _tokenId) internal returns (bool) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        uint256 lastInteracted = s.ducks[_tokenId].lastInteracted;
+        // if interacted less than 12 hours ago
+        if (block.timestamp < lastInteracted + 12 hours) {
+            return false;
+        }
+
+        uint256 interactionCount = s.ducks[_tokenId].interactionCount;
+        uint256 interval = block.timestamp - lastInteracted;
+        uint256 daysSinceInteraction = interval / 1 days;
+        uint256 l_kinship;
+        if (interactionCount > daysSinceInteraction) {
+            l_kinship = interactionCount - daysSinceInteraction;
+        }
+
+        uint256 hateBonus;
+
+        if (l_kinship < 40) {
+            hateBonus = 2;
+        }
+        l_kinship += 1 + hateBonus;
+        s.ducks[_tokenId].interactionCount = l_kinship;
+
+        s.ducks[_tokenId].lastInteracted = uint40(block.timestamp);
+        emit DuckInteract(_tokenId, l_kinship);
+        return true;
+    }
+
+    function purchase(address _from, uint256 _quackAmount) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        uint256 share = (_quackAmount * 25) / 100;
+
+        // Using 0x000000000000000000000000000000000000dEaD  as burn address.
+        address quackTokenAddress = s.quackTokenAddress;
+        LibERC20.safeTransferFrom(quackTokenAddress, _from, address(0x000000000000000000000000000000000000dEaD), share);
+        LibERC20.safeTransferFrom(quackTokenAddress, _from, s.treasuryAddress, share);
+        LibERC20.safeTransferFrom(quackTokenAddress, _from, s.farmingAddress, share);
+        LibERC20.safeTransferFrom(quackTokenAddress, _from, s.daoAddress, share);
+    }
+
+    function internalTransferFrom(address _sender, address _from, address _to, uint256 _tokenId) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+
+        require(_to != address(0), "DuckFacet: Can't transfer to 0 address");
+        require(_from != address(0), "DuckFacet: _from can't be 0 address");
+        require(_from == s.ducks[_tokenId].owner, "DuckFacet: _from is not owner, transfer failed");
+        require(
+            _sender == _from || s.operators[_from][_sender] || _sender == s.approved[_tokenId],
+            "DuckFacet: Not owner or approved to transfer"
+        );
+        transfer(_from, _to, _tokenId);
+        // LibERC721Marketplace.updateERC721Listing(address(this), _tokenId, _from);
+    }
+
+    function transfer(address _from, address _to, uint256 _tokenId) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+
+        // remove
+        uint256 index = s.ownerDuckIdIndexes[_from][_tokenId];
+        uint256 lastIndex = s.ownerDuckIds[_from].length - 1;
+        if (index != lastIndex) {
+            uint32 lastTokenId = s.ownerDuckIds[_from][lastIndex];
+            s.ownerDuckIds[_from][index] = lastTokenId;
+            s.ownerDuckIdIndexes[_from][lastTokenId] = index;
+        }
+        s.ownerDuckIds[_from].pop();
+        delete s.ownerDuckIdIndexes[_from][_tokenId];
+        if (s.approved[_tokenId] != address(0)) {
+            delete s.approved[_tokenId];
+            emit LibERC721.Approval(_from, address(0), _tokenId);
+        }
+        // add
+        s.ducks[_tokenId].owner = _to;
+        s.ownerDuckIdIndexes[_to][_tokenId] = s.ownerDuckIds[_to].length;
+        s.ownerDuckIds[_to].push(uint32(_tokenId));
+        emit LibERC721.Transfer(_from, _to, _tokenId);
+    }
+
+    // TODO : rework !!
+    ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
+    ///@dev only valid for claimed ducks
+    ///@param _tokenId The identifier of the NFT to spend the skill points on
+    ///@param _values An array of four integers that represent the values of the skill points
+    function spendSkillPoints(uint256 _tokenId, int16[4] calldata _values) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        //To test: Prevent underflow (is this ok?), see require below
+        uint256 totalUsed;
+        for (uint16 index; index < _values.length; index++) {
+            totalUsed += LibMaths.abs(_values[index]);
+
+            s.ducks[_tokenId].characteristics[index] += _values[index];
+        }
+        // handles underflow
+        require(availableSkillPoints(_tokenId) >= totalUsed, "DuckGameFacet: Not enough skill points");
+        //Increment used skill points
+        s.ducks[_tokenId].usedSkillPoints += totalUsed;
+        // TODO : wip events
+        // emit SpendSkillpoints(_tokenId, _values);
+    }
+
     ///////////////////////////////////////////
-    // MARK: Getters
+    // MARK: Read functions
     ///////////////////////////////////////////
 
     function getDuckInfo(uint256 _tokenId) internal view returns (DuckInfoDTO memory duckInfo_) {
@@ -176,35 +243,6 @@ library LibDuck {
         }
     }
 
-    function interact(uint256 _tokenId) internal returns (bool) {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        uint256 lastInteracted = s.ducks[_tokenId].lastInteracted;
-        // if interacted less than 12 hours ago
-        if (block.timestamp < lastInteracted + 12 hours) {
-            return false;
-        }
-
-        uint256 interactionCount = s.ducks[_tokenId].interactionCount;
-        uint256 interval = block.timestamp - lastInteracted;
-        uint256 daysSinceInteraction = interval / 1 days;
-        uint256 l_kinship;
-        if (interactionCount > daysSinceInteraction) {
-            l_kinship = interactionCount - daysSinceInteraction;
-        }
-
-        uint256 hateBonus;
-
-        if (l_kinship < 40) {
-            hateBonus = 2;
-        }
-        l_kinship += 1 + hateBonus;
-        s.ducks[_tokenId].interactionCount = l_kinship;
-
-        s.ducks[_tokenId].lastInteracted = uint40(block.timestamp);
-        emit DuckInteract(_tokenId, l_kinship);
-        return true;
-    }
-
     function kinship(uint256 _tokenId) internal view returns (uint256 score_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         DuckInfo storage duck = s.ducks[_tokenId];
@@ -219,19 +257,83 @@ library LibDuck {
         }
     }
 
-    function xpUntilNextLevel(uint256 _experience) internal pure returns (uint256 requiredXp_) {
-        uint256 currentLevel = duckLevel(_experience);
-        requiredXp_ = ((currentLevel ** 2) * 50) - _experience;
+    ///////////////////////////////////////////
+    // Old Version XP calculation
+    // function xpUntilNextLevel(uint256 _experience) internal pure returns (uint256 requiredXp_) {
+    //     uint256 currentLevel = duckLevel(_experience);
+    //     requiredXp_ = ((currentLevel ** 2) * 50) - _experience;
+    // }
+
+    // function duckLevel(uint256 _experience) internal pure returns (uint256 level_) {
+    //     if (_experience > 490050) {
+    //         return 99;
+    //     }
+
+    //     level_ = (LibMaths.sqrt(2 * _experience) / 10);
+    //     return level_ + 1;
+    // }
+    ///////////////////////////////////////////
+    // New Version XP calculation
+
+        /**
+     * @notice Adds XP to a Duck and updates its level accordingly.
+     * @param _tokenId The duckId to update.
+     * @param xp The amount of XP to add.
+     */
+    function addXP(uint256 _tokenId, uint256 xp) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        DuckInfo storage duck = s.ducks[_tokenId];
+        duck.experience += xp;
+        if (duck.experience >= getCumulativeXP(s.MAX_LEVEL)) {
+            duck.experience = getCumulativeXP(s.MAX_LEVEL);
+            duck.level = s.MAX_LEVEL;
+        } else {
+            duck.level = calculateLevel(duck.experience);
+        }
     }
 
-    function duckLevel(uint256 _experience) internal pure returns (uint256 level_) {
-        if (_experience > 490050) {
-            return 99;
+
+        /**
+     * @notice Retrieves the cumulative XP required for a specific level.
+     * @param level The level for which to retrieve the XP requirement.
+     * @return xp The cumulative XP required to reach the given level.
+     */
+    function getCumulativeXP(uint256 level) internal pure returns (uint256 xp) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        require(level <= s.MAX_LEVEL, "LibDuck: Level exceeds max level");
+        xp = s.XP_TABLE[level];
+    }
+
+    /**
+     * @notice Determines the current level based on total XP using binary search.
+     * @param totalXP The total accumulated XP of the Duck.
+     * @return level The current level of the Duck.
+     */
+    function calculateLevel(uint256 totalXP) internal pure returns (uint256 level) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        uint256 left = 1;
+        uint256 right = s.MAX_LEVEL;
+        uint256 mid;
+
+        while (left <= right) {
+            mid = (left + right) / 2;
+            uint256 xpAtMid = getCumulativeXP(mid);
+
+            if (totalXP < xpAtMid) {
+                right = mid - 1;
+            } else {
+                uint256 xpAtNext = mid < s.MAX_LEVEL ? getCumulativeXP(mid + 1) : xpAtMid;
+                if (totalXP < xpAtNext) {
+                    return mid;
+                }
+                left = mid + 1;
+            }
         }
 
-        level_ = (LibMaths.sqrt(2 * _experience) / 10);
-        return level_ + 1;
+        return s.MAX_LEVEL;
     }
+    ///////////////////////////////////////////
+
 
     //Only valid for claimed Ducks
     function modifiedCharacteristicsAndRarityScore(uint256 _tokenId)
@@ -332,27 +434,7 @@ library LibDuck {
         singleEggDuckTraits_.minimumStake = 1;
     }
 
-    // TODO : rework !!
-    ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
-    ///@dev only valid for claimed ducks
-    ///@param _tokenId The identifier of the NFT to spend the skill points on
-    ///@param _values An array of four integers that represent the values of the skill points
-    function spendSkillPoints(uint256 _tokenId, int16[4] calldata _values) internal {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        //To test: Prevent underflow (is this ok?), see require below
-        uint256 totalUsed;
-        for (uint16 index; index < _values.length; index++) {
-            totalUsed += LibMaths.abs(_values[index]);
 
-            s.ducks[_tokenId].characteristics[index] += _values[index];
-        }
-        // handles underflow
-        require(availableSkillPoints(_tokenId) >= totalUsed, "DuckGameFacet: Not enough skill points");
-        //Increment used skill points
-        s.ducks[_tokenId].usedSkillPoints += totalUsed;
-        // TODO : wip events
-        // emit SpendSkillpoints(_tokenId, _values);
-    }
 
     ///@notice Query the available skill points that can be used for an NFT
     ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used
