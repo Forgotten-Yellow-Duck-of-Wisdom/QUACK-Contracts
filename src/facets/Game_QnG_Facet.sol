@@ -16,49 +16,87 @@ contract Game_QnG_Facet is AccessControl {
     event VersusGameScoreAdded(uint256 indexed gameId, uint256 indexed tournamentId, uint256 versusGameScoresCount);
     event TournamentGameScoreAdded(uint256 indexed tournamentId, uint256 versusGameScoresCount);
 
-    /**
-     * @notice Adds a new versus game score to the system
-     * @dev This function can only be called by an address with the GameQnG role
-     * @param _versusGameScore A struct containing all the details of the versus game score
-     * @custom:throws Game_QnG_Facet: Players and Ducks addresses length mismatch
-     * @custom:throws Game_QnG_Facet: Game ID already exists
-     */
-    function addVersusGameScore(VersusGameScore memory _versusGameScore) external onlyGameQnG {
-        _addVersusGameScore(_versusGameScore);
-    }
+    function addVersusGameScore(
+    uint256 _gameId,
+    uint256 _tournamentId,
+    VersusPlayerScore[] calldata _playerScores
+) external onlyGameQnG {
+    require(_playerScores.length > 1, "At least two players required");
+    
+    AppStorage storage s = LibAppStorage.diamondStorage();
 
-    /**
-     * @notice Internal function to add a versus game score and update related data
-     * @dev This function updates various mappings and awards XP to winning ducks
-     * @param _versusGameScore A struct containing all the details of the versus game score
-     * @custom:throws Game_QnG_Facet: Players and Ducks addresses length mismatch
-     * @custom:throws Game_QnG_Facet: Game ID already exists
-     */
-    function _addVersusGameScore(VersusGameScore memory _versusGameScore) internal {
-        require(
-            _versusGameScore.playersAddresses.length > 1
-                && (
-                    _versusGameScore.playersAddresses.length == _versusGameScore.playersCharIds.length
-                        && _versusGameScore.playersAddresses.length == _versusGameScore.playersScores.length
-                ),
-            "Game_QnG_Facet: Players and Ducks addresses length mismatch"
-        );
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        require(s.versusGameScoresIdToIndex[_versusGameScore.gameId] == 0, "Game_QnG_Facet: Game ID already exists");
-        s.versusGameScoresCount++;
-        uint256 currentIndex = s.versusGameScoresCount;
+    // Initialize VersusGame
+    VersusGame storage game = s.versusGames[_gameId];
+    game.gameId = _gameId;
+    game.tournamentId = _tournamentId;
+    game.timestamp = block.timestamp;
 
-        s.versusGameScores[currentIndex] = _versusGameScore;
-        s.versusGameScoresIdToIndex[_versusGameScore.gameId] = currentIndex;
-        for (uint256 i = 0; i < _versusGameScore.playersAddresses.length; i++) {
-            s.playersVersusGameScoreIndexes[_versusGameScore.playersAddresses[i]] = currentIndex;
-            s.ducksVersusGameScoreIndexes[_versusGameScore.playersCharIds[i]] = currentIndex;
-            if (isWinner(_versusGameScore, _versusGameScore.playersCharIds[i])) {
-                LibDuck.addXP(_versusGameScore.playersCharIds[i], 20);
-            }
+    for (uint256 i = 0; i < _playerScores.length; i++) {
+        VersusPlayerScore memory pScore = _playerScores[i];
+        require(pScore.player != address(0), "Invalid player address");
+        
+        game.players.push(pScore);
+
+        // Link players to games
+        s.playerVersusGameIds[pScore.player].push(_gameId);
+
+        // Link characters to games
+        s.duckVersusGameIds[pScore.characterId].push(_gameId);
+
+        // check if the player is a winner
+        if (isWinner(pScore, pScore.characterId)) {
+            LibDuck.addXP(pScore.characterId, 20);
         }
-        emit VersusGameScoreAdded(_versusGameScore.gameId, _versusGameScore.tournamentId, currentIndex);
     }
+
+    s.versusGameCount++;
+
+    emit VersusGameScoreAdded(_gameId, _tournamentId, _playerScores.length);
+}
+
+    // /**
+    //  * @notice Adds a new versus game score to the system
+    //  * @dev This function can only be called by an address with the GameQnG role
+    //  * @param _versusGameScore A struct containing all the details of the versus game score
+    //  * @custom:throws Game_QnG_Facet: Players and Ducks addresses length mismatch
+    //  * @custom:throws Game_QnG_Facet: Game ID already exists
+    //  */
+    // function addVersusGameScore(VersusGameScore memory _versusGameScore) external onlyGameQnG {
+    //     _addVersusGameScore(_versusGameScore);
+    // }
+
+    // /**
+    //  * @notice Internal function to add a versus game score and update related data
+    //  * @dev This function updates various mappings and awards XP to winning ducks
+    //  * @param _versusGameScore A struct containing all the details of the versus game score
+    //  * @custom:throws Game_QnG_Facet: Players and Ducks addresses length mismatch
+    //  * @custom:throws Game_QnG_Facet: Game ID already exists
+    //  */
+    // function _addVersusGameScore(VersusGameScore memory _versusGameScore) internal {
+    //     require(
+    //         _versusGameScore.playersAddresses.length > 1
+    //             && (
+    //                 _versusGameScore.playersAddresses.length == _versusGameScore.playersCharIds.length
+    //                     && _versusGameScore.playersAddresses.length == _versusGameScore.playersScores.length
+    //             ),
+    //         "Game_QnG_Facet: Players and Ducks addresses length mismatch"
+    //     );
+    //     AppStorage storage s = LibAppStorage.diamondStorage();
+    //     require(s.versusGameScoresIdToIndex[_versusGameScore.gameId] == 0, "Game_QnG_Facet: Game ID already exists");
+    //     s.versusGameScoresCount++;
+    //     uint256 currentIndex = s.versusGameScoresCount;
+
+    //     s.versusGameScores[currentIndex] = _versusGameScore;
+    //     s.versusGameScoresIdToIndex[_versusGameScore.gameId] = currentIndex;
+    //     for (uint256 i = 0; i < _versusGameScore.playersAddresses.length; i++) {
+    //         s.playersVersusGameScoreIndexes[_versusGameScore.playersAddresses[i]] = currentIndex;
+    //         s.ducksVersusGameScoreIndexes[_versusGameScore.playersCharIds[i]] = currentIndex;
+    //         if (isWinner(_versusGameScore, _versusGameScore.playersCharIds[i])) {
+    //             LibDuck.addXP(_versusGameScore.playersCharIds[i], 20);
+    //         }
+    //     }
+    //     emit VersusGameScoreAdded(_versusGameScore.gameId, _versusGameScore.tournamentId, currentIndex);
+    // }
 
     /**
      * @notice Determines if a given character ID is a winner in a versus game
@@ -76,43 +114,74 @@ contract Game_QnG_Facet is AccessControl {
         return false;
     }
 
-    /**
-     * @notice Adds a new tournament game score and its associated versus game scores
-     * @dev This function can only be called by an address with the GameQnG role. It adds the tournament
-     *      score and then calls _addVersusGameScore for each associated versus game.
-     * @param _tournamentGameScore A struct containing the tournament game score details
-     * @param _versusGameScores An array of VersusGameScore structs associated with this tournament
-     * @custom:throws Game_QnG_Facet: No versus game scores provided
-     * @custom:throws Game_QnG_Facet: Tournament ID already exists
-     * @custom:throws Game_QnG_Facet: Versus game score does not match tournament ID
-     */
-    function addTournamentGameScore(
-        TournamentGameScore memory _tournamentGameScore,
-        VersusGameScore[] memory _versusGameScores
-    ) external onlyGameQnG {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        require(_versusGameScores.length > 0, "Game_QnG_Facet: No versus game scores provided");
-        require(
-            s.tournamentGameScoresIdToIndex[_tournamentGameScore.tournamentId] == 0,
-            "Game_QnG_Facet: Tournament ID already exists"
-        );
+    // /**
+    //  * @notice Adds a new tournament game score and its associated versus game scores
+    //  * @dev This function can only be called by an address with the GameQnG role. It adds the tournament
+    //  *      score and then calls _addVersusGameScore for each associated versus game.
+    //  * @param _tournamentGameScore A struct containing the tournament game score details
+    //  * @param _versusGameScores An array of VersusGameScore structs associated with this tournament
+    //  * @custom:throws Game_QnG_Facet: No versus game scores provided
+    //  * @custom:throws Game_QnG_Facet: Tournament ID already exists
+    //  * @custom:throws Game_QnG_Facet: Versus game score does not match tournament ID
+    //  */
+    // function addTournamentGameScore(
+    //     TournamentGameScore memory _tournamentGameScore,
+    //     VersusGameScore[] memory _versusGameScores
+    // ) external onlyGameQnG {
+    //     AppStorage storage s = LibAppStorage.diamondStorage();
+    //     require(_versusGameScores.length > 0, "Game_QnG_Facet: No versus game scores provided");
+    //     require(
+    //         s.tournamentGameScoresIdToIndex[_tournamentGameScore.tournamentId] == 0,
+    //         "Game_QnG_Facet: Tournament ID already exists"
+    //     );
 
-        // Add the tournament game score
-        s.tournamentGameScoresCount++;
-        s.tournamentGameScores[s.tournamentGameScoresCount] = _tournamentGameScore;
-        s.tournamentGameScoresIdToIndex[_tournamentGameScore.tournamentId] = s.tournamentGameScoresCount;
+    //     // Add the tournament game score
+    //     s.tournamentGameScoresCount++;
+    //     s.tournamentGameScores[s.tournamentGameScoresCount] = _tournamentGameScore;
+    //     s.tournamentGameScoresIdToIndex[_tournamentGameScore.tournamentId] = s.tournamentGameScoresCount;
 
-        // Add all versus game scores associated with this tournament
-        for (uint256 i = 0; i < _versusGameScores.length; i++) {
-            require(
-                _versusGameScores[i].tournamentId == _tournamentGameScore.tournamentId,
-                "Game_QnG_Facet: Versus game score does not match tournament ID"
-            );
-            _addVersusGameScore(_versusGameScores[i]);
-        }
-        emit TournamentGameScoreAdded(_tournamentGameScore.tournamentId, _versusGameScores.length);
+    //     // Add all versus game scores associated with this tournament
+    //     for (uint256 i = 0; i < _versusGameScores.length; i++) {
+    //         require(
+    //             _versusGameScores[i].tournamentId == _tournamentGameScore.tournamentId,
+    //             "Game_QnG_Facet: Versus game score does not match tournament ID"
+    //         );
+    //         _addVersusGameScore(_versusGameScores[i]);
+    //     }
+    //     emit TournamentGameScoreAdded(_tournamentGameScore.tournamentId, _versusGameScores.length);
+    // }
+
+
+function addTournament(
+    uint256 _tournamentId,
+    VersusGame[] calldata _versusGames,
+    address[] calldata _winners
+) external onlyGameQnG {
+    require(_versusGames.length == 8, "Tournament requires 8 Versus games");
+    require(_winners.length > 0, "At least one winner required");
+
+    AppStorage storage s = LibAppStorage.diamondStorage();
+
+    Tournament storage tournament = s.tournaments[_tournamentId];
+    tournament.tournamentId = _tournamentId;
+    tournament.timestamp = block.timestamp;
+
+    for (uint256 i = 0; i < _versusGames.length; i++) {
+        uint256 gameId = _versusGames[i].gameId;
+        tournament.gameIds.push(gameId);
     }
 
+    for (uint256 i = 0; i < _winners.length; i++) {
+        tournament.winners.push(_winners[i]);
+
+        // Link players to tournaments
+        s.playerTournamentIds[_winners[i]].push(_tournamentId);
+    }
+
+    s.tournamentCount++;
+
+    emit TournamentAdded(_tournamentId, _versusGames.length, _winners.length);
+}
     ///////////////////////////////////////////////////////////
     // Read functions
     ///////////////////////////////////////////////////////////

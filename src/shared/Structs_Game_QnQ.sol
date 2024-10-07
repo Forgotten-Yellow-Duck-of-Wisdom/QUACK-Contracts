@@ -1,21 +1,33 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
+enum GameMode { 
+    Versus, 
+    Tournament 
+}
 
-struct VersusGameScore {
+struct VersusPlayerScore {
+    address player;
+    uint256 characterId;
+    uint256 score;
+    bool isWinner;
+}
+
+struct VersusGame {
     uint256 gameId;
-    uint256 tournamentId; // 0 if not a tournament
-    uint256[] playersScores; // * Must be same size
-    uint256[] playersCharIds; // * Must be same size
-    uint256[] winnersCharIds;
-    address[] playersAddresses; // * Must be same size
+     // 0 if GameMode = Versus (not Tournament or other game mode)
+     // else Reference to Tournament.tournamentId or other game mode id
+    uint256 modeId;
     uint256 timestamp;
+    GameMode gameMode;
+    VersusPlayerScore[] players;
 }
 
 // each tournament is composed of multiple VersusGame
-struct TournamentGameScore {
+struct Tournament {
     uint256 tournamentId;
-    address[] playersAddresses;
-    // uint256[] playersScores;    ?
-    address[] winnersAddresses;
     uint256 timestamp;
+    // References to VersusGame.gameId
+    uint256[] gameIds; 
+    // Top players in the tournament
+    address[] winners;  
 }

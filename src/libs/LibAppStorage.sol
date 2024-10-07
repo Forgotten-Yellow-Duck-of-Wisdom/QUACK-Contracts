@@ -4,7 +4,7 @@ pragma solidity >=0.8.21;
 import {MetaTxContextStorage, CollateralTypeInfo} from "../shared/Structs.sol";
 import {Cycle, DuckInfo} from "../shared/Structs_Ducks.sol";
 import {VRFV2PlusWrapperInterface} from "../interfaces/IVRFV2PlusWrapperInterface.sol";
-import {VersusGameScore} from "../shared/Structs_Game_QnQ.sol";
+import {VersusGameScore, Tournament} from "../shared/Structs_Game_QnQ.sol";
 
 struct AppStorage {
     /////////////////// Global Diamond ///////////////////
@@ -54,7 +54,7 @@ struct AppStorage {
     // Ducks XP
     uint256 MAX_LEVEL;
     uint256 LEVEL_50_XP;
-    // uint256 LEVEL_60_XP;
+    uint256 LEVEL_60_XP;
     uint256 LEVEL_100_XP;
     uint256[101] XP_TABLE;
     // global duck collection info
@@ -80,15 +80,34 @@ struct AppStorage {
     mapping(address => mapping(address => bool)) operators;
     //Pet operators for a token
     mapping(address => mapping(address => bool)) petOperators;
+    //
     /////////////////// Game QnQ - ///////////////////
-    uint256 versusGameScoresCount;
-    mapping(uint256 => VersusGameScore) versusGameScores;
-    mapping(uint256 => uint256) versusGameScoresIdToIndex;
-    mapping(address => uint256) playersVersusGameScoreIndexes;
-    mapping(uint256 => uint256) ducksVersusGameScoreIndexes;
-    uint256 tournamentGameScoresCount;
-    mapping(uint256 => TournamentGameScore) tournamentGameScores;
-    mapping(uint256 => uint256) tournamentGameScoresIdToIndex;
+    //
+    // Versus Game Storage
+    uint256 versusGameCount;
+     // gameIndex => VersusGame
+    mapping(uint256 => VersusGame) versusGames;
+    // versusDbId => versusGameIndex
+    mapping(uint256 => uint256) versusGameIdToIndex;
+
+    // Tournament Storage
+    uint256 tournamentCount;
+    // tournamentId => Tournament
+    mapping(uint256 => Tournament) tournaments;
+    // tournamentDbId => tournamentIndex
+    mapping(uint256 => uint256) tournamentGameIdToIndex;
+
+    // Player-Based Storage (Optional for quick access)
+    // player address => list of gameIndexes
+    mapping(address => uint256[]) playerVersusGameIndexes; 
+    // player address => list of tournamentIndexes
+    mapping(address => uint256[]) playerTournamentIndexes; 
+
+    // Character-Based Storage
+    // duckId => list of gameIndexes
+    mapping(uint256 => uint256[]) duckVersusGameIndexes; 
+    // duckId => list of tournamentIndexes
+    mapping(uint256 => uint256[]) duckTournamentIndexes; 
 }
 
 /////////////////// Item Factory - (ERC1155) ///////////////////
