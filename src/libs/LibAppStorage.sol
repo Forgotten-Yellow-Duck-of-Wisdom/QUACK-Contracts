@@ -4,7 +4,6 @@ pragma solidity >=0.8.21;
 import {MetaTxContextStorage, CollateralTypeInfo} from "../shared/Structs.sol";
 import {Cycle, DuckInfo} from "../shared/Structs_Ducks.sol";
 import {VRFV2PlusWrapperInterface} from "../interfaces/IVRFV2PlusWrapperInterface.sol";
-import {VersusGameScore, Tournament} from "../shared/Structs_Game_QnQ.sol";
 
 struct AppStorage {
     /////////////////// Global Diamond ///////////////////
@@ -18,7 +17,7 @@ struct AppStorage {
     address treasuryAddress;
     address farmingAddress;
     address daoAddress;
-    address gameQnGAuthorityAddress;
+    mapping(address => bool) allowedGameManager;
     // Using 0x000000000000000000000000000000000000dEaD  as burn address.
     //
     /////////////////// Collateral ///////////////////
@@ -35,9 +34,6 @@ struct AppStorage {
     /////////////////// Chainlink-VRF ///////////////////
     //
     /// NEW VRF 2.5
-    // @dev: unused atm, vrf used directly in duck struct/character
-    // mapping(uint256 => VRFRequest) vrfRequests;
-    // uint256[] vrfRequestIds;
     VRFV2PlusWrapperInterface chainlink_vrf_wrapper;
     mapping(uint256 => uint256) vrfRequestIdToTokenId;
     uint32 vrfCallbackGasLimit;
@@ -52,11 +48,8 @@ struct AppStorage {
     /////////////////// Ducks - (ERC721) ///////////////////
     //
     // Ducks XP
-    uint256 MAX_LEVEL;
-    uint256 LEVEL_50_XP;
-    uint256 LEVEL_60_XP;
-    uint256 LEVEL_100_XP;
-    uint256[101] XP_TABLE;
+    uint16 MAX_LEVEL;
+    mapping(uint16 => uint256) XP_TABLE;
     // global duck collection info
     string name;
     string symbol;
@@ -80,34 +73,6 @@ struct AppStorage {
     mapping(address => mapping(address => bool)) operators;
     //Pet operators for a token
     mapping(address => mapping(address => bool)) petOperators;
-    //
-    /////////////////// Game QnQ - ///////////////////
-    //
-    // Versus Game Storage
-    uint256 versusGameCount;
-     // gameIndex => VersusGame
-    mapping(uint256 => VersusGame) versusGames;
-    // versusDbId => versusGameIndex
-    mapping(uint256 => uint256) versusGameIdToIndex;
-
-    // Tournament Storage
-    uint256 tournamentCount;
-    // tournamentId => Tournament
-    mapping(uint256 => Tournament) tournaments;
-    // tournamentDbId => tournamentIndex
-    mapping(uint256 => uint256) tournamentGameIdToIndex;
-
-    // Player-Based Storage (Optional for quick access)
-    // player address => list of gameIndexes
-    mapping(address => uint256[]) playerVersusGameIndexes; 
-    // player address => list of tournamentIndexes
-    mapping(address => uint256[]) playerTournamentIndexes; 
-
-    // Character-Based Storage
-    // duckId => list of gameIndexes
-    mapping(uint256 => uint256[]) duckVersusGameIndexes; 
-    // duckId => list of tournamentIndexes
-    mapping(uint256 => uint256[]) duckTournamentIndexes; 
 }
 
 /////////////////// Item Factory - (ERC1155) ///////////////////

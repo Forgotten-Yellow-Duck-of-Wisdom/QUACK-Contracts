@@ -71,4 +71,22 @@ interface VRFV2PlusWrapperInterface {
         uint32 _numWords,
         bytes calldata _extraArgs
     ) external payable returns (uint256 requestId);
+
+    function getConfig()
+    external
+    view
+    returns (
+      int256 fallbackWeiPerUnitLink,
+      uint32 stalenessSeconds,
+      uint32 fulfillmentFlatFeeNativePPM,
+      uint32 fulfillmentFlatFeeLinkDiscountPPM,
+      uint32 wrapperGasOverhead,
+      uint32 coordinatorGasOverheadNative,
+      uint32 coordinatorGasOverheadLink,
+      uint16 coordinatorGasOverheadPerWord,
+      uint8 wrapperNativePremiumPercentage,
+      uint8 wrapperLinkPremiumPercentage,
+      bytes32 keyHash,
+      uint8 maxNumWords
+    );
 }

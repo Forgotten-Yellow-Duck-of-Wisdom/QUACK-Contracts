@@ -35,6 +35,23 @@ contract AdminFacet is AccessControl {
      * @param _newModifiers The new set of modifiers applied.
      */
     event UpdateCollateralModifiers(int16[] _oldModifiers, int16[] _newModifiers);
+    /**
+     * @dev Emitted when a game manager is set.
+     * @param _gameManager The address of the game manager.
+     * @param _allowed The boolean value indicating whether the game manager is allowed.
+     */
+    event GameManagerSet(address indexed _gameManager, bool _allowed);
+
+    /**
+     * @notice Sets the allowed status for a game manager.
+     * @dev Only callable by an admin.
+     * @param _gameManager The address of the game manager to set the allowed status for.
+     * @param _allowed The boolean value indicating whether the game manager is allowed.
+     */
+    function setGameManager(address _gameManager, bool _allowed) external isAdmin {
+        LibAppStorage.diamondStorage().allowedGameManager[_gameManager] = _allowed;
+        emit GameManagerSet(_gameManager, _allowed);
+    }
 
     /**
      * @notice Updates the parameters for Chainlink VRF (Verifiable Random Function) requests.
@@ -141,17 +158,16 @@ contract AdminFacet is AccessControl {
         }
     }
 
-    // TODO: rework enumerable map
-    /**
-     * @notice Allows the admin to update the collateral modifiers of an existing collateral type.
-     * @dev Only callable by an admin. This function updates the modifiers array for the specified collateral type.
-     *      Currently commented out pending the rework of the enumerable map structure.
-     * @param _collateralType The address of the existing collateral to update.
-     * @param _modifiers An array containing the new numeric traits modifiers to be applied to the collateral.
-     *
-     * @custom:dev This function emits an `UpdateCollateralModifiers` event before updating the modifiers.
-     * It ensures that the modifiers array is properly updated in the storage mapping.
-     */
+    // /**
+    //  * @notice Allows the admin to update the collateral modifiers of an existing collateral type.
+    //  * @dev Only callable by an admin. This function updates the modifiers array for the specified collateral type.
+    //  *      Currently commented out pending the rework of the enumerable map structure.
+    //  * @param _collateralType The address of the existing collateral to update.
+    //  * @param _modifiers An array containing the new numeric traits modifiers to be applied to the collateral.
+    //  *
+    //  * @custom:dev This function emits an `UpdateCollateralModifiers` event before updating the modifiers.
+    //  * It ensures that the modifiers array is properly updated in the storage mapping.
+    //  */
     // function updateCollateralModifiers(address _collateralType, int16[NUMERIC_TRAITS_NUM] calldata _modifiers)
     //     external
     //     isAdmin
@@ -160,29 +176,18 @@ contract AdminFacet is AccessControl {
     //     s.collateralTypeInfo[_collateralType].modifiers = _modifiers;
     // }
 
-    // TODO : wip level up mecanism
     // /**
     //  * @notice Grants experience points (XP) to multiple Ducks.
-    //  * @dev Only callable by an admin. Each Duck must be a claimed Duck. The XP granted to each Duck cannot exceed 1000 at a time.
-    //  * @param _tokenIds An array of Duck token IDs to which XP will be granted.
-    //  * @param _xpValues An array of XP values corresponding to each Duck in _tokenIds.
-    //  *
-    //  * @custom:dev This function iterates through the provided _tokenIds and _xpValues arrays,
-    //  * ensuring they are of equal length and that each XP value does not exceed the maximum allowed.
-    //  * It then increments the experience points of each specified Duck accordingly.
-    //  * Emits a GrantExperience event for each successful XP grant.
+    //  * @dev Only callable by an admin. The XP granted to each Duck cannot exceed 1000 at a time.
+    //  * @param _duckIds An array of Duck token IDs to which XP will be granted.
+    //  * @param _xpValues An array of XP values corresponding to each Duck in _duckIds.
     //  */
-    // function grantExperience(uint256[] calldata _tokenIds, uint256[] calldata _xpValues) external isAdmin {
-    //     AppStorage storage s = LibAppStorage.diamondStorage();
-    //     require(_tokenIds.length == _xpValues.length, "AdminFacet: IDs must match XP array length");
-    //     for (uint256 i; i < _tokenIds.length; i++) {
-    //         uint256 tokenId = _tokenIds[i];
-    //         uint256 xp = _xpValues[i];
-    //         require(xp <= 1000, "AdminFacet: Cannot grant more than 1000 XP at a time");
-
-    //         s.ducks[tokenId].experience += xp;
-    //     }
-    //     // TODO: wip events / libXP/drop
-    //     // emit LibXPAllocation.GrantExperience(_tokenIds, _xpValues);
-    // }
+    function grantExperience(uint256[] calldata _duckIds, uint256[] calldata _xpValues) external isGameManager {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        require(_duckIds.length == _xpValues.length, "AdminFacet: IDs must match XP array length");
+        for (uint256 i; i < _duckIds.length; i++) {
+            require(_xpValues[i] <= 1000, "AdminFacet: Cannot grant more than 1000 XP at a time");
+            LibDuck.addXP(_duckIds[i], _xpValues[i]);
+        }
+    }
 }

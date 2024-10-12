@@ -57,6 +57,7 @@ struct DuckInfo {
     // TODO : update to mapping uint uint to store multiple random number (create enum ?)
     uint256 randomNumber;
     uint256 experience;
+    uint16 level;
     //The number of skill points this Duck has already used
     uint256 usedSkillPoints;
     //How many times the owner of this Duck has interacted with it.
@@ -118,7 +119,7 @@ struct DuckInfoDTO {
     //number of skill points used
     uint256 usedSkillPoints;
     //the current Duck level
-    uint256 level;
+    uint16 level;
     uint256 cycleId;
     uint256 baseRarityScore;
     uint256 modifiedRarityScore;

@@ -24,11 +24,13 @@ import "forge-std/Test.sol";
 library LibDuck {
     event DuckInteract(uint256 indexed _tokenId, uint256 kinship);
     event EggOpened(uint256 indexed tokenId);
-
+    event DuckXPAdded(uint256 indexed tokenId, uint256 level, uint256 xp);
+    event DuckLevelUp(uint256 indexed tokenId, uint256 level);
     ///////////////////////////////////////////
     // MARK: Write functions
     ///////////////////////////////////////////
 
+    // called by Chainlink vrf callback
     function openEggWithVRF(uint256 _requestId, uint256[] memory _randomWords) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 tokenId = s.vrfRequestIdToTokenId[_requestId];
@@ -220,7 +222,6 @@ library LibDuck {
         duckInfo_.cycleId = s.ducks[_tokenId].cycleId;
         if (duckInfo_.status == DuckStatusType.DUCK) {
             int16[] memory characteristics = getCharacteristicsArray(s.ducks[_tokenId]);
-            uint256 actualDuckLevel = calculateLevel(s.ducks[_tokenId].experience);
             duckInfo_.name = s.ducks[_tokenId].name;
             duckInfo_.equippedWearables = getEquippedWearablesArray(s.ducks[_tokenId]);
             duckInfo_.collateral = s.ducks[_tokenId].collateralType;
@@ -230,10 +231,8 @@ library LibDuck {
             duckInfo_.kinship = kinship(_tokenId);
             duckInfo_.lastInteracted = s.ducks[_tokenId].lastInteracted;
             duckInfo_.experience = s.ducks[_tokenId].experience;
-            console2.log("actualDuckLevel", actualDuckLevel, "xp", s.ducks[_tokenId].experience);
-            duckInfo_.toNextLevel = getCumulativeXP(actualDuckLevel + 1) - s.ducks[_tokenId].experience;
-            // duckInfo_.toNextLevel = actualDuckLevel == s.MAX_LEVEL ? 0 : getCumulativeXP(actualDuckLevel + 1) - s.ducks[_tokenId].experience;
-            duckInfo_.level = actualDuckLevel;
+            duckInfo_.toNextLevel = getRequiredXP(s.ducks[_tokenId].level, duckInfo_.experience);
+            duckInfo_.level = s.ducks[_tokenId].level;
             duckInfo_.usedSkillPoints = s.ducks[_tokenId].usedSkillPoints;
             duckInfo_.characteristics = characteristics;
             duckInfo_.statistics = getStatisticsArray(s.ducks[_tokenId]);
@@ -260,39 +259,36 @@ library LibDuck {
         }
     }
 
-    ///////////////////////////////////////////
-    // Old Version XP calculation
-    // function xpUntilNextLevel(uint256 _experience) internal pure returns (uint256 requiredXp_) {
-    //     uint256 currentLevel = duckLevel(_experience);
-    //     requiredXp_ = ((currentLevel ** 2) * 50) - _experience;
-    // }
-
-    // function duckLevel(uint256 _experience) internal pure returns (uint256 level_) {
-    //     if (_experience > 490050) {
-    //         return 99;
-    //     }
-
-    //     level_ = (LibMaths.sqrt(2 * _experience) / 10);
-    //     return level_ + 1;
-    // }
-    ///////////////////////////////////////////
-    // New Version XP calculation
-
     /**
      * @notice Adds XP to a Duck and updates its level accordingly.
      * @param _tokenId The duckId to update.
      * @param xp The amount of XP to add.
      */
     function addXP(uint256 _tokenId, uint256 xp) internal {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        DuckInfo storage duck = s.ducks[_tokenId];
-        duck.experience += xp;
-        if (duck.experience >= getCumulativeXP(s.MAX_LEVEL)) {
-            duck.experience = getCumulativeXP(s.MAX_LEVEL);
-            // duck.level = s.MAX_LEVEL;
-        } else {
-            // duck.level = calculateLevel(duck.experience);
-        }
+         AppStorage storage s = LibAppStorage.diamondStorage();
+         DuckInfo storage duck = s.ducks[_tokenId];
+        emit DuckXPAdded(_tokenId, duck.level, xp);
+
+        // Continue adding XP and handling level-ups until either XP is exhausted or max level is reached
+         while (xp > 0 && duck.level < s.MAX_LEVEL) {
+             uint256 remainingXP = s.XP_TABLE[duck.level] - duck.experience;
+             
+             if (xp >= remainingXP) {
+                // Sufficient XP to level up
+                 xp -= remainingXP;
+                 duck.level++;
+                 duck.experience = 0;
+                 emit DuckLevelUp(_tokenId, duck.level);
+                 if (duck.level >= s.MAX_LEVEL) {
+                    // Duck has reached max level; exit the loop immediately (save gas)
+                     break;
+                 }
+             } else {
+                // Not enough XP to level up; add remaining XP
+                 duck.experience += xp;
+                 xp = 0;
+             }
+         }
     }
 
     /**
@@ -300,40 +296,16 @@ library LibDuck {
      * @param level The level for which to retrieve the XP requirement.
      * @return xp The cumulative XP required to reach the given level.
      */
-    function getCumulativeXP(uint256 level) internal view returns (uint256 xp) {
+    function getRequiredXP(uint16 level, uint256 experience) internal view returns (uint256 xp) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        require(level <= s.MAX_LEVEL, "LibDuck: Level exceeds max level");
-        xp = s.XP_TABLE[level];
-    }
-
-    /**
-     * @notice Determines the current level based on total XP using binary search.
-     * @param totalXP The total accumulated XP of the Duck.
-     * @return level The current level of the Duck.
-     */
-    function calculateLevel(uint256 totalXP) internal view returns (uint256 level) {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        uint256 left = 1;
-        uint256 right = s.MAX_LEVEL;
-        uint256 mid;
-
-        while (left <= right) {
-            mid = (left + right) / 2;
-            uint256 xpAtMid = getCumulativeXP(mid);
-
-            if (totalXP < xpAtMid) {
-                right = mid - 1;
-            } else {
-                uint256 xpAtNext = mid < s.MAX_LEVEL ? getCumulativeXP(mid + 1) : xpAtMid;
-                if (totalXP < xpAtNext) {
-                    return mid;
-                }
-                left = mid + 1;
-            }
+        if (level >= s.MAX_LEVEL) {
+            xp = 0;
         }
-
-        return s.MAX_LEVEL;
+        else{
+            xp = s.XP_TABLE[level] - experience;
+        }
     }
+
     ///////////////////////////////////////////
 
     //Only valid for claimed Ducks
@@ -442,20 +414,18 @@ library LibDuck {
     function availableSkillPoints(uint256 _tokenId) internal view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 skillPoints =
-            LibDuck.calculateSkillPoints(_tokenId, s.ducks[_tokenId].experience, s.ducks[_tokenId].hatchTime);
+            LibDuck.calculateSkillPoints(_tokenId, s.ducks[_tokenId].level, s.ducks[_tokenId].hatchTime);
         uint256 usedSkillPoints = s.ducks[_tokenId].usedSkillPoints;
         require(skillPoints >= usedSkillPoints, "LibDuck: Used skill points is greater than skill points");
         return skillPoints - usedSkillPoints;
     }
 
-    function calculateSkillPoints(uint256 _tokenId, uint256 experience, uint256 hatchTime)
+    function calculateSkillPoints(uint256 _tokenId, uint256 level, uint256 hatchTime)
         internal
         view
         returns (uint256)
     {
-        uint256 level = calculateLevel(experience);
         uint256 skillPoints = (level / 3);
-
         uint256 ageDifference = block.timestamp - hatchTime;
         return skillPoints + calculateSkillPointsByAge(ageDifference);
     }

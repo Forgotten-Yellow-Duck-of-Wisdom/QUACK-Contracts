@@ -25,6 +25,7 @@ contract DuckGameFacet is AccessControl {
     ///////////////////////////////////////////////////////////
 
     // TODO : 1 or more egg can be purchased ?
+    // todo : add non reentrancy guard
     ///@notice Allow an address to purchase a duck egg
     ///@param _to Address to send the egg once purchased
     function buyEgg(address _to) external returns (uint32 duckId_) {
@@ -80,7 +81,7 @@ contract DuckGameFacet is AccessControl {
     function claimDuck(uint256 _tokenId, uint256 _option, uint256 _stakeAmount)
         external
         onlyUnlocked(_tokenId)
-        onlyDuckOwner(_tokenId)
+        isDuckOwner(_tokenId)
     {
         LibDuck.claimDuck(_tokenId, _msgSender(), _option, _stakeAmount);
     }
@@ -93,7 +94,7 @@ contract DuckGameFacet is AccessControl {
     function setDuckName(uint256 _tokenId, string calldata _name)
         external
         onlyUnlocked(_tokenId)
-        onlyDuckOwner(_tokenId)
+        isDuckOwner(_tokenId)
     {
         LibDuck.setDuckName(_tokenId, _name);
     }
@@ -128,7 +129,7 @@ contract DuckGameFacet is AccessControl {
     // function spendSkillPoints(uint256 _tokenId, int16[4] calldata _values)
     //     external
     //     onlyUnlocked(_tokenId)
-    //     onlyDuckOwner(_tokenId)
+    //     isDuckOwner(_tokenId)
     // {
     //     LibDuck.spendSkillPoints(_tokenId, _values);
     // }
@@ -189,25 +190,25 @@ contract DuckGameFacet is AccessControl {
         availableSkillPoints_ = LibDuck.availableSkillPoints(_tokenId);
     }
 
-    ///@notice Calculate level given the XP(experience points)
-    ///@dev Only valid for claimed Ducks
-    ///@param _experience the current XP gathered by an NFT
-    ///@return level_ The level of an NFT with experience `_experience`
-    function duckLevel(uint256 _experience) external view returns (uint256 level_) {
-        level_ = LibDuck.calculateLevel(_experience);
-    }
-
     ///@notice Calculate the XP needed for an NFT to advance to the next level
     ///@dev Only valid for claimed Ducks
+    ///@param _level The current level of an NFT
     ///@param _experience The current XP points gathered by an NFT
     ///@return requiredXp_ The XP required for the NFT to move to the next level
-    function xpUntilNextLevel(uint256 _experience) external view returns (uint256 requiredXp_) {
-        requiredXp_ = LibDuck.getCumulativeXP(LibDuck.calculateLevel(_experience) + 1) - _experience;
+    function xpUntilNextLevel(uint16 _level, uint256 _experience) external view returns (uint256 requiredXp_) {
+        requiredXp_ = LibDuck.getRequiredXP(_level, _experience);
     }
 
-    function xpTable() external view returns (uint256[101] memory xpTable_) {
-        xpTable_ = LibAppStorage.diamondStorage().XP_TABLE;
+function xpTable() external view returns (uint256[] memory xpTable_) {
+    AppStorage storage s = LibAppStorage.diamondStorage();
+    uint16 maxLevel = s.MAX_LEVEL;
+    xpTable_ = new uint256[](maxLevel); // index level start at 0
+
+    for (uint16 i = 0; i < maxLevel; i++) {
+        xpTable_[i] = s.XP_TABLE[i];
     }
+}
+
     // TODO : rework or fetch for global duck infos
     // ///@notice Compute the rarity multiplier of an NFT
     // ///@dev Only valid for claimed Ducks

@@ -123,8 +123,8 @@ contract TestDuck is TestBaseContract {
 
     function testDuckLevel() public {
         testBasicDuckHatching();
-        uint256[101] memory xpTable = diamond.xpTable();
-        for (uint256 i = 0; i < 101; i++) {
+        uint256[] memory xpTable = diamond.xpTable();
+        for (uint256 i = 0; i < xpTable.length; i++) {
             console2.log("XP Table Level", i, ":", xpTable[i]);
         }
     }

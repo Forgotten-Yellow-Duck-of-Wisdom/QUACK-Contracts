@@ -69,14 +69,15 @@ library LibMaths {
         else if (rarityScore >= 581) return 1000;
     }
 
-    function sqrt(uint256 x) internal pure returns (uint256 y) {
-        uint256 z = (x + 1) / 2;
-        y = x;
-        while (z < y) {
-            y = z;
-            z = (x / z + z) / 2;
-        }
-    }
+    // // old version xp calculation
+    // function sqrt(uint256 x) internal pure returns (uint256 y) {
+    //     uint256 z = (x + 1) / 2;
+    //     y = x;
+    //     while (z < y) {
+    //         y = z;
+    //         z = (x / z + z) / 2;
+    //     }
+    // }
 
     function abs(int256 x) internal pure returns (uint256) {
         return uint256(x >= 0 ? x : -x);

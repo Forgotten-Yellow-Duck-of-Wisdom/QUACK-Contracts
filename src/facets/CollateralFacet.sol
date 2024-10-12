@@ -147,7 +147,7 @@ contract CollateralFacet is AccessControl {
      * @custom:dev This function emits an `IncreaseStake` event upon successful addition of collateral.
      * It transfers the specified collateral tokens from the sender to the Duck's escrow contract.
      */
-    function increaseStake(uint256 _tokenId, uint256 _stakeAmount) external onlyDuckOwner(_tokenId) {
+    function increaseStake(uint256 _tokenId, uint256 _stakeAmount) external isDuckOwner(_tokenId) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         address escrow = s.ducks[_tokenId].escrow;
         require(escrow != address(0), "CollateralFacet: Does not have an escrow");
@@ -170,7 +170,7 @@ contract CollateralFacet is AccessControl {
     function decreaseStake(uint256 _tokenId, uint256 _reduceAmount)
         external
         onlyUnlocked(_tokenId)
-        onlyDuckOwner(_tokenId)
+        isDuckOwner(_tokenId)
     {
         AppStorage storage s = LibAppStorage.diamondStorage();
         address escrow = s.ducks[_tokenId].escrow;
@@ -196,7 +196,7 @@ contract CollateralFacet is AccessControl {
     //  * another Duck, updates ownership mappings, deletes approvals, and manages collateral transfers.
     //  * It also interacts with the ForgeFacet to mint essence for the owner.
     //  */
-    // function decreaseAndDestroy(uint256 _tokenId, uint256 _toId) external onlyUnlocked(_tokenId) onlyDuckOwner(_tokenId) {
+    // function decreaseAndDestroy(uint256 _tokenId, uint256 _toId) external onlyUnlocked(_tokenId) isDuckOwner(_tokenId) {
     //         AppStorage storage s = LibAppStorage.diamondStorage();
     // address escrow = s.ducks[_tokenId].escrow;
     //     require(escrow != address(0), "CollateralFacet: Does not have an escrow");
