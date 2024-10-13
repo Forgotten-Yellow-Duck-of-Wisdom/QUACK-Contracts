@@ -199,15 +199,15 @@ contract DuckGameFacet is AccessControl {
         requiredXp_ = LibDuck.getRequiredXP(_level, _experience);
     }
 
-function xpTable() external view returns (uint256[] memory xpTable_) {
-    AppStorage storage s = LibAppStorage.diamondStorage();
-    uint16 maxLevel = s.MAX_LEVEL;
-    xpTable_ = new uint256[](maxLevel); // index level start at 0
+    function xpTable() external view returns (uint256[] memory xpTable_) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        uint16 maxLevel = s.MAX_LEVEL;
+        xpTable_ = new uint256[](maxLevel); // index level start at 0
 
-    for (uint16 i = 0; i < maxLevel; i++) {
-        xpTable_[i] = s.XP_TABLE[i];
+        for (uint16 i = 0; i < maxLevel; i++) {
+            xpTable_[i] = s.XP_TABLE[i];
+        }
     }
-}
 
     // TODO : rework or fetch for global duck infos
     // ///@notice Compute the rarity multiplier of an NFT

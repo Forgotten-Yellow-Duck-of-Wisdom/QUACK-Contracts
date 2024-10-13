@@ -57,7 +57,8 @@ abstract contract TestBaseContract is Test {
             address(init),
             abi.encodeWithSelector(
                 init.init.selector,
-                address(quackToken),
+                address(quackToken), // quackToken
+                address(tUSDC), // essencesToken
                 // vm.envAddress("QUACK_TOKEN_ADDRESS_SEPOLIA"),
                 vm.envAddress("TEST_TREASURY_WADDRESS"),
                 vm.envAddress("TEST_FARMING_WADDRESS"),

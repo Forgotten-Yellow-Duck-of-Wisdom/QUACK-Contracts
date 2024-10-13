@@ -265,30 +265,30 @@ library LibDuck {
      * @param xp The amount of XP to add.
      */
     function addXP(uint256 _tokenId, uint256 xp) internal {
-         AppStorage storage s = LibAppStorage.diamondStorage();
-         DuckInfo storage duck = s.ducks[_tokenId];
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        DuckInfo storage duck = s.ducks[_tokenId];
         emit DuckXPAdded(_tokenId, duck.level, xp);
 
         // Continue adding XP and handling level-ups until either XP is exhausted or max level is reached
-         while (xp > 0 && duck.level < s.MAX_LEVEL) {
-             uint256 remainingXP = s.XP_TABLE[duck.level] - duck.experience;
-             
-             if (xp >= remainingXP) {
+        while (xp > 0 && duck.level < s.MAX_LEVEL) {
+            uint256 remainingXP = s.XP_TABLE[duck.level] - duck.experience;
+
+            if (xp >= remainingXP) {
                 // Sufficient XP to level up
-                 xp -= remainingXP;
-                 duck.level++;
-                 duck.experience = 0;
-                 emit DuckLevelUp(_tokenId, duck.level);
-                 if (duck.level >= s.MAX_LEVEL) {
+                xp -= remainingXP;
+                duck.level++;
+                duck.experience = 0;
+                emit DuckLevelUp(_tokenId, duck.level);
+                if (duck.level >= s.MAX_LEVEL) {
                     // Duck has reached max level; exit the loop immediately (save gas)
-                     break;
-                 }
-             } else {
+                    break;
+                }
+            } else {
                 // Not enough XP to level up; add remaining XP
-                 duck.experience += xp;
-                 xp = 0;
-             }
-         }
+                duck.experience += xp;
+                xp = 0;
+            }
+        }
     }
 
     /**
@@ -300,8 +300,7 @@ library LibDuck {
         AppStorage storage s = LibAppStorage.diamondStorage();
         if (level >= s.MAX_LEVEL) {
             xp = 0;
-        }
-        else{
+        } else {
             xp = s.XP_TABLE[level] - experience;
         }
     }
@@ -420,11 +419,7 @@ library LibDuck {
         return skillPoints - usedSkillPoints;
     }
 
-    function calculateSkillPoints(uint256 _tokenId, uint256 level, uint256 hatchTime)
-        internal
-        view
-        returns (uint256)
-    {
+    function calculateSkillPoints(uint256 _tokenId, uint256 level, uint256 hatchTime) internal view returns (uint256) {
         uint256 skillPoints = (level / 3);
         uint256 ageDifference = block.timestamp - hatchTime;
         return skillPoints + calculateSkillPointsByAge(ageDifference);

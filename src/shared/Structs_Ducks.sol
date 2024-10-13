@@ -29,6 +29,27 @@ enum DuckStatisticsType {
     SANITY
 }
 
+enum DuckWearableSlot {
+    BODY,
+    FACE,
+    EYES,
+    HEAD,
+    MOUTH,
+    HAND_LEFT,
+    HAND_RIGHT,
+    FEET,
+    SPECIAL
+}
+
+enum DuckBadgeSlot {
+    BADGE_1,
+    BADGE_2,
+    BADGE_3,
+    BADGE_4,
+    BADGE_5,
+    BADGE_6
+}
+
 // For later upgrades
 // enum DuckTraitType {
 // }
@@ -72,15 +93,17 @@ struct DuckInfo {
     DuckStatusType status; // 0 == egg, 1 == VRF_PENDING, 2 == open egg, 3 == Duck
     bool locked;
     //The currently equipped wearables of the Duck
-    mapping(uint16 => uint256) equippedWearables;
+    uint256[] equippedWearables;
+    //The currently equipped badges of the Duck
+    uint256[] equippedBadges;
     // DuckCharacteristicsType => value
-    mapping(uint16 => int16) characteristics;
+    int16[] characteristics;
     // DuckCharacteristicsType => value
-    mapping(uint16 => int16) temporaryCharacteristicsBoosts;
+    int16[] temporaryCharacteristicsBoosts;
     // DuckStatisticsType => value
-    mapping(uint16 => int16) statistics;
+    int16[] statistics;
     // DuckStatisticsType => value
-    mapping(uint16 => int16) temporaryStatisticsBoosts;
+    int16[] temporaryStatisticsBoosts;
 }
 
 /////////////////////////////////

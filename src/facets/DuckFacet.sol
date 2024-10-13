@@ -166,15 +166,15 @@ contract DuckFacet is AccessControl {
         approved_ = LibAppStorage.diamondStorage().operators[_owner][_operator];
     }
 
-    /**
-     * @notice Verify if an address is authorized to interact with ducks on behalf of another address
-     * @param _owner The address of the duck owner
-     * @param _operator The address acting on behalf of the owner
-     * @return approved_ True if `_operator` is an approved duck interaction operator, false otherwise
-     */
-    function isPetOperatorForAll(address _owner, address _operator) external view returns (bool approved_) {
-        approved_ = LibAppStorage.diamondStorage().petOperators[_owner][_operator];
-    }
+    // /**
+    //  * @notice Verify if an address is authorized to interact with ducks on behalf of another address
+    //  * @param _owner The address of the duck owner
+    //  * @param _operator The address acting on behalf of the owner
+    //  * @return approved_ True if `_operator` is an approved duck interaction operator, false otherwise
+    //  */
+    // function isPetOperatorForAll(address _owner, address _operator) external view returns (bool approved_) {
+    //     approved_ = LibAppStorage.diamondStorage().petOperators[_owner][_operator];
+    // }
 
     /**
      * @notice Securely transfer ownership of an NFT.
@@ -257,6 +257,8 @@ contract DuckFacet is AccessControl {
         LibAppStorage.diamondStorage().operators[_msgSender()][_operator] = _approved;
         emit LibERC721.ApprovalForAll(_msgSender(), _operator, _approved);
     }
+
+    // function setPetOperatorForAll(address _operator, bool _approved) external {
 
     /**
      * @notice Get the name of the token collection

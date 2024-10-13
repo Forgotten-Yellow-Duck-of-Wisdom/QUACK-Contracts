@@ -4,6 +4,7 @@ pragma solidity >=0.8.21;
 import {MetaTxContextStorage, CollateralTypeInfo} from "../shared/Structs.sol";
 import {Cycle, DuckInfo} from "../shared/Structs_Ducks.sol";
 import {VRFV2PlusWrapperInterface} from "../interfaces/IVRFV2PlusWrapperInterface.sol";
+import {ItemType} from "../shared/Structs_Items.sol";
 
 struct AppStorage {
     /////////////////// Global Diamond ///////////////////
@@ -14,6 +15,7 @@ struct AppStorage {
     /////////////////// Global Protocol ///////////////////
     //
     address quackTokenAddress;
+    address essencesTokenAddress;
     address treasuryAddress;
     address farmingAddress;
     address daoAddress;
@@ -71,11 +73,29 @@ struct AppStorage {
     mapping(address => mapping(uint256 => uint256)) ownerDuckIdIndexes;
     mapping(uint256 => address) approved;
     mapping(address => mapping(address => bool)) operators;
-    //Pet operators for a token
+    //Pet operators for a Duck
     mapping(address => mapping(address => bool)) petOperators;
+    /////////////////// Item Factory - (ERC1155) ///////////////////
+    string itemsBaseUri;
+    ItemType[] itemTypes;
+    mapping(uint256 => address) itemTypeToTokenAddress;
+    // ---- OWNER ITEMS BALANCES ----
+    // owner => itemId => balance
+    mapping(address => mapping(uint256 => uint256)) ownerItemBalances;
+    // owner => itemIds array
+    mapping(address => uint256[]) ownerItems;
+    // indexes are stored 1 higher so that 0 means no items in items array
+    mapping(address => mapping(uint256 => uint256)) ownerItemIndexes;
+    // ---- NFT ITEMS BALANCES ----
+    // nftAddress => nftId => tokenId => balance
+    mapping(address => mapping(uint256 => mapping(uint256 => uint256))) nftItemBalances;
+    // nftAddress => nftId => tokenIds array
+    mapping(address => mapping(uint256 => uint256[])) nftItems;
+    // indexes are stored 1 higher so that 0 means no items in items array
+    mapping(address => mapping(uint256 => mapping(uint256 => uint256))) nftItemIndexes;
 }
 
-/////////////////// Item Factory - (ERC1155) ///////////////////
+// ??
 
 /////////////////// Composable NFT - (EIP998) ///////////////////
 

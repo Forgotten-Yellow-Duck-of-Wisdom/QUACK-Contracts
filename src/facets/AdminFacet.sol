@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
 
-import {Cycle} from "../shared/Structs_Ducks.sol";
-import {CollateralTypeDTO, CollateralTypeInfo} from "../shared/Structs.sol";
-import {LibDuck} from "../libs/LibDuck.sol";
-import {IDuckFacet} from "../interfaces/IDuckFacet.sol";
-import {AccessControl} from "../shared/AccessControl.sol";
 import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
+// import {Cycle} from "../shared/Structs_Ducks.sol";
+import {CollateralTypeDTO, CollateralTypeInfo} from "../shared/Structs.sol";
+import {ItemType} from "../shared/Structs_Items.sol";
+import {LibDuck} from "../libs/LibDuck.sol";
+import {LibItems} from "../libs/LibItems.sol";
+import {AccessControl} from "../shared/AccessControl.sol";
 import {LibERC721} from "../libs/LibERC721.sol";
-import {LibString} from "../libs/LibString.sol";
+import {LibERC1155} from "../libs/LibERC1155.sol";
+// import {LibString} from "../libs/LibString.sol";
 
 /**
  * @title AdminFacet
@@ -41,6 +43,36 @@ contract AdminFacet is AccessControl {
      * @param _allowed The boolean value indicating whether the game manager is allowed.
      */
     event GameManagerSet(address indexed _gameManager, bool _allowed);
+    /**
+     * @dev Emitted when the VRF parameters are changed.
+     * @param _callbackGasLimit The gas limit for the VRF callback function.
+     * @param _requestConfirmations The number of block confirmations the VRF request will wait before responding.
+     * @param _numWords The number of random words to be returned by the VRF.
+     */
+    event VrfParametersChanged(uint32 _callbackGasLimit, uint16 _requestConfirmations, uint32 _numWords);
+    /**
+     * @dev Emitted when a new item type is added.
+     * @param _itemType The details of the item type added.
+     */
+    event AddItemType(ItemType _itemType);
+    /**
+     * @dev Emitted when the max quantity of an item is updated.
+     * @param _itemIds An array of item IDs whose max quantities are updated.
+     * @param _maxQuantities An array of new max quantities corresponding to each item in _itemIds.
+     */
+    event UpdateItemTypeMaxQuantity(uint256[] _itemIds, uint256[] _maxQuantities);
+    /**
+     * @dev Emitted when the price of an item is updated.
+     * @param _itemId The ID of the item whose price is updated.
+     * @param _newPrice The new price of the item.
+     */
+    event UpdateItemPrice(uint256 _itemId, uint256 _newPrice);
+    /**
+     * @dev Emitted when an item type is updated.
+     * @param _itemId The ID of the item whose type is updated.
+     * @param _itemType The new type of the item.
+     */
+    event UpdateItemType(uint256 _itemId, ItemType _itemType);
 
     /**
      * @notice Sets the allowed status for a game manager.
@@ -68,6 +100,7 @@ contract AdminFacet is AccessControl {
         s.vrfCallbackGasLimit = _callbackGasLimit;
         s.vrfRequestConfirmations = _requestConfirmations;
         s.vrfNumWords = _numWords;
+        emit VrfParametersChanged(_callbackGasLimit, _requestConfirmations, _numWords);
     }
 
     /**
@@ -176,9 +209,127 @@ contract AdminFacet is AccessControl {
     //     s.collateralTypeInfo[_collateralType].modifiers = _modifiers;
     // }
 
+    ///@notice Allow an admin to add item types
+    ///@param _itemTypes An array of structs where each struct contains details about each item to be added
+    function addItemTypes(ItemType[] memory _itemTypes) external isAdmin {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        uint256 itemTypesLength = s.itemTypes.length;
+        for (uint256 i; i < _itemTypes.length; i++) {
+            uint256 itemId = itemTypesLength++;
+            s.itemTypes.push(_itemTypes[i]);
+            emit AddItemType(_itemTypes[i]);
+            // TODO: wip event
+            // IEventHandlerFacet(s.wearableDiamond).emitTransferSingleEvent(LibMeta.msgSender(), address(0), address(0), itemId, 0);
+        }
+    }
+
+    /**
+     * @notice Set the base url for all items types
+     *     @param _value The new base url
+     */
+    function setBaseURI(string memory _value) external isAdmin {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        s.itemsBaseUri = _value;
+        for (uint256 i; i < s.itemTypes.length; i++) {
+            // TODO: wip event
+            // //delegate event to wearableDiamond
+            // IEventHandlerFacet(s.wearableDiamond).emitUriEvent(LibStrings.strWithUint(_value, i), i);
+        }
+    }
+
+    ///@notice Allow an admin to increase the max quantity of an item
+    ///@dev Will throw if the new maxquantity is less than the existing quantity
+    ///@param _itemIds An array containing the identifiers of items whose quantites are to be increased
+    ///@param _maxQuantities An array containing the new max quantity of each item
+    function updateItemTypeMaxQuantity(uint256[] calldata _itemIds, uint256[] calldata _maxQuantities)
+        external
+        isAdmin
+    {
+        require(
+            _itemIds.length == _maxQuantities.length,
+            "AdminFacet: _itemIds length not the same as _newQuantities length"
+        );
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        for (uint256 i; i < _itemIds.length; i++) {
+            uint256 itemId = _itemIds[i];
+            uint256 maxQuantity = _maxQuantities[i];
+            require(
+                maxQuantity >= s.itemTypes[itemId].totalQuantity,
+                "AdminFacet: new maxQuantity must be greater than actual quantity"
+            );
+            s.itemTypes[itemId].maxQuantity = maxQuantity;
+        }
+        emit UpdateItemTypeMaxQuantity(_itemIds, _maxQuantities);
+    }
+
+    // TODO : rework
+    // ///@notice Allow an item manager to set the trait and rarity modifiers of an item/wearable
+    // ///@dev Only valid for existing wearables
+    // ///@param _wearableId The identifier of the wearable to set
+    // ///@param _traitModifiers An array containing the new trait modifiers to be applied to a wearable with identifier `_wearableId`
+    // ///@param _rarityScoreModifier The new rarityScore modifier of a wearable with identifier `_wearableId`
+    // function setItemTraitModifiersAndRarityModifier(
+    //     uint256 _wearableId,
+    //     int8[6] calldata _traitModifiers,
+    //     uint8 _rarityScoreModifier
+    // ) external isAdmin {
+    //     require(_wearableId < s.itemTypes.length, "Error");
+    //     s.itemTypes[_wearableId].traitModifiers = _traitModifiers;
+    //     s.itemTypes[_wearableId].rarityScoreModifier = _rarityScoreModifier;
+    //     emit ItemModifiersSet(_wearableId, _traitModifiers, _rarityScoreModifier);
+    // }
+
+    ///@notice Allow an item manager to set the price of multiple items in GHST
+    ///@dev Only valid for existing items that can be purchased with GHST
+    ///@param _itemIds The items whose price is to be changed
+    ///@param _newPrices The new prices of the items
+    function batchUpdateItemsPrice(uint256[] calldata _itemIds, uint256[] calldata _newPrices) public isAdmin {
+        require(_itemIds.length == _newPrices.length, "AdminFacet: Items must be the same length as prices");
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        for (uint256 i; i < _itemIds.length; i++) {
+            uint256 itemId = _itemIds[i];
+            ItemType storage item = s.itemTypes[itemId];
+            item.quackPrice = _newPrices[i];
+            emit UpdateItemPrice(itemId, _newPrices[i]);
+        }
+    }
+
+    ///@notice Allow a game manager to mint new ERC1155 items
+    ///@dev Will throw if a particular item current supply has reached its maximum supply
+    ///@param _to The address to mint the items to
+    ///@param _itemIds An array containing the identifiers of the items to mint
+    ///@param _quantities An array containing the number of items to mint
+    function mintItems(address _to, uint256[] calldata _itemIds, uint256[] calldata _quantities)
+        external
+        isGameManager
+    {
+        require(_itemIds.length == _quantities.length, "AdminFacet: Ids and quantities length must match");
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        address sender = _msgSender();
+        uint256 itemTypesLength = s.itemTypes.length;
+        for (uint256 i; i < _itemIds.length; i++) {
+            uint256 itemId = _itemIds[i];
+
+            require(itemTypesLength > itemId, "AdminFacet: Item type does not exist");
+
+            uint256 quantity = _quantities[i];
+            uint256 totalQuantity = s.itemTypes[itemId].totalQuantity + quantity;
+            require(
+                totalQuantity <= s.itemTypes[itemId].maxQuantity,
+                "AdminFacet: Total item type quantity exceeds max quantity"
+            );
+
+            LibItems.addToOwner(_to, itemId, quantity);
+            s.itemTypes[itemId].totalQuantity = totalQuantity;
+        }
+        // TODO: wip event
+        // IEventHandlerFacet(s.wearableDiamond).emitTransferBatchEvent(sender, address(0), _to, _itemIds, _quantities);
+        LibERC1155.onERC1155BatchReceived(sender, address(0), _to, _itemIds, _quantities, "");
+    }
+
     // /**
     //  * @notice Grants experience points (XP) to multiple Ducks.
-    //  * @dev Only callable by an admin. The XP granted to each Duck cannot exceed 1000 at a time.
+    //  * @dev Only callable by a game manager. The XP granted to each Duck cannot exceed 1000 at a time.
     //  * @param _duckIds An array of Duck token IDs to which XP will be granted.
     //  * @param _xpValues An array of XP values corresponding to each Duck in _duckIds.
     //  */
@@ -190,4 +341,10 @@ contract AdminFacet is AccessControl {
             LibDuck.addXP(_duckIds[i], _xpValues[i]);
         }
     }
+
+    // TODO: wip items logic
+    function grantItems(uint256[] calldata _duckIds, uint256[] calldata _tokenIds, uint256[] calldata _itemIds)
+        external
+        isGameManager
+    {}
 }
