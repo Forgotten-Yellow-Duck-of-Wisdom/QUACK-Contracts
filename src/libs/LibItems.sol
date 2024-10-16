@@ -86,8 +86,8 @@ library LibItems {
         if (_fromContract == address(this) && bal == 1) {
             DuckInfo storage duck = s.ducks[_fromTokenId];
             if (
-                duck.equippedWearables[uint256(DuckWearableSlot.HAND_LEFT)] == _id
-                    && duck.equippedWearables[uint256(DuckWearableSlot.HAND_RIGHT)] == _id
+                duck.equippedWearables[uint16(DuckWearableSlot.HAND_LEFT)] == _id
+                    && duck.equippedWearables[uint16(DuckWearableSlot.HAND_RIGHT)] == _id
             ) {
                 revert("LibItems: Can't hold 1 item in both hands");
             }
@@ -96,8 +96,8 @@ library LibItems {
 
     function checkWearableIsEquipped(uint256 _fromTokenId, uint256 _id) internal view {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        uint256 wearableSlotsTotal = uint256(type(DuckWearableSlot).max) + 1;
-        for (uint256 i; i < wearableSlotsTotal; i++) {
+        uint16 wearableSlotsTotal = uint16(type(DuckWearableSlot).max) + 1;
+        for (uint16 i; i < wearableSlotsTotal; i++) {
             require(
                 s.ducks[_fromTokenId].equippedWearables[i] != _id, "Items: Cannot transfer wearable that is equipped"
             );

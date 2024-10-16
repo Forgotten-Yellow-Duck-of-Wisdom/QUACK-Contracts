@@ -8,7 +8,7 @@ import {LibERC20} from "../libs/LibERC20.sol";
 import {LibString} from "../libs/LibString.sol";
 import {LibDuck} from "../libs/LibDuck.sol";
 import {IERC20} from "../interfaces/IERC20.sol";
-import {CollateralTypeDTO} from "../shared/Structs.sol";
+import {CollateralTypeDTO, CollateralTypeInfo} from "../shared/Structs.sol";
 
 /**
  * @title CollateralFacet
@@ -99,7 +99,6 @@ contract CollateralFacet is AccessControl {
             collateralInfo_[i].delisted = s.collateralTypeInfo[collateral].delisted;
         }
     }
-
     /**
      * @notice Retrieves all collateral contract addresses that are universally available across all cycles.
      * @return An array of addresses, each representing a collateral's contract address.

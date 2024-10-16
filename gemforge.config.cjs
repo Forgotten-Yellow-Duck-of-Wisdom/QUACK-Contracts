@@ -130,6 +130,10 @@ module.exports = {
       // RPC endpoint URL
       rpcUrl: () => process.env.SEPOLIA_RPC_URL,
     },
+    baseSepolia: {
+      // RPC endpoint URL
+      rpcUrl: () => process.env.BASE_SEPOLIA_RPC_URL,
+    },
   },
   // Targets to deploy
   targets: {
@@ -143,14 +147,15 @@ module.exports = {
       // CREATE3 salt
       create3Salt: SALT,
     },
-    sepolia: {
+    baseSepolia: {
       // Network to deploy to
-      network: "sepolia",
+      network: "baseSepolia",
       // Wallet to use for deployment
       wallet: "walletTest",
       // Initialization function arguments
       initArgs: [
         process.env.QUACK_TOKEN_ADDRESS_SEPOLIA,
+        process.env.ESSENCES_TOKEN_ADDRESS_SEPOLIA,
         process.env.TEST_TREASURY_WADDRESS,
         process.env.TEST_FARMING_WADDRESS,
         process.env.TEST_DAO_WADDRESS,

@@ -209,6 +209,7 @@ contract AdminFacet is AccessControl {
     //     s.collateralTypeInfo[_collateralType].modifiers = _modifiers;
     // }
 
+    /// TODO : wip add checkParams (prevent creationg item with unexisting collarat, etc)
     ///@notice Allow an admin to add item types
     ///@param _itemTypes An array of structs where each struct contains details about each item to be added
     function addItemTypes(ItemType[] memory _itemTypes) external isAdmin {

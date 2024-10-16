@@ -7,7 +7,9 @@ import {
     EggDuckTraitsDTO,
     DuckStatusType,
     DuckCharacteristicsType,
-    DuckStatisticsType
+    DuckStatisticsType,
+    DuckWearableSlot,
+    DuckBadgeSlot
 } from "../shared/Structs_Ducks.sol";
 import {CollateralTypeInfo} from "../shared/Structs.sol";
 import {AppStorage, LibAppStorage} from "./LibAppStorage.sol";
@@ -224,6 +226,7 @@ library LibDuck {
             int16[] memory characteristics = getCharacteristicsArray(s.ducks[_tokenId]);
             duckInfo_.name = s.ducks[_tokenId].name;
             duckInfo_.equippedWearables = getEquippedWearablesArray(s.ducks[_tokenId]);
+            duckInfo_.equippedBadges = getEquippedBadgesArray(s.ducks[_tokenId]);
             duckInfo_.collateral = s.ducks[_tokenId].collateralType;
             duckInfo_.escrow = s.ducks[_tokenId].escrow;
             duckInfo_.stakedAmount = IERC20(duckInfo_.collateral).balanceOf(duckInfo_.escrow);
@@ -482,9 +485,8 @@ library LibDuck {
         view
         returns (uint256[] memory wearablesArray_)
     {
-        // TODO : set total equipped wearable count
-        // uint256 wearableCount = uint256(type(DuckCharacteristicsType).max) + 1;
-        uint256 wearableCount = 16;
+        uint256 wearableCount = uint256(type(DuckWearableSlot).max) + 1;
+        // uint256 wearableCount = 16;
 
         wearablesArray_ = new uint256[](wearableCount);
 
@@ -492,4 +494,18 @@ library LibDuck {
             wearablesArray_[i] = duckInfo.equippedWearables[i];
         }
     }
+
+    function getEquippedBadgesArray(DuckInfo storage duckInfo)
+        internal
+        view
+        returns (uint256[] memory badgesArray_)
+    {
+        uint256 badgesCount = uint256(type(DuckBadgeSlot).max) + 1;
+
+        badgesArray_ = new uint256[](badgesCount);
+
+        for (uint16 i = 0; i < badgesCount; i++) {
+            badgesArray_[i] = duckInfo.equippedBadges[i];
+        }
+            }
 }

@@ -23,7 +23,8 @@ enum DuckCharacteristicsType {
 
 enum DuckStatisticsType {
     HEALTH,
-    MANA,
+    MANA, 
+    SPECIAL,
     ENERGY,
     FOOD,
     SANITY
@@ -92,18 +93,19 @@ struct DuckInfo {
     uint256 bodyColorItemId;
     DuckStatusType status; // 0 == egg, 1 == VRF_PENDING, 2 == open egg, 3 == Duck
     bool locked;
+
     //The currently equipped wearables of the Duck
-    uint256[] equippedWearables;
+    mapping(uint16 => uint256) equippedWearables;
     //The currently equipped badges of the Duck
-    uint256[] equippedBadges;
+    mapping(uint16 => uint256) equippedBadges;
     // DuckCharacteristicsType => value
-    int16[] characteristics;
+    mapping(uint16 => int16) characteristics;
     // DuckCharacteristicsType => value
-    int16[] temporaryCharacteristicsBoosts;
+    mapping(uint16 => int16) temporaryCharacteristicsBoosts;
     // DuckStatisticsType => value
-    int16[] statistics;
+    mapping(uint16 => int16) statistics;
     // DuckStatisticsType => value
-    int16[] temporaryStatisticsBoosts;
+    mapping(uint16 => int16) temporaryStatisticsBoosts;
 }
 
 /////////////////////////////////
@@ -129,6 +131,7 @@ struct DuckInfoDTO {
     int16[] statistics;
     int16[] modifiedStatistics;
     uint256[] equippedWearables;
+    uint256[] equippedBadges;
     address collateral;
     address escrow;
     uint256 stakedAmount;

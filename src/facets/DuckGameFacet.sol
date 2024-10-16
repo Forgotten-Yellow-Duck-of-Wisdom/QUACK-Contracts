@@ -28,7 +28,7 @@ contract DuckGameFacet is AccessControl {
     // todo : add non reentrancy guard
     ///@notice Allow an address to purchase a duck egg
     ///@param _to Address to send the egg once purchased
-    function buyEgg(address _to) external returns (uint32 duckId_) {
+    function buyEggs(address _to) external returns (uint32 duckId_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 currentCycleId = s.currentCycleId;
         require(currentCycleId == 1, "DuckGameFacet: Can only purchase from cycle 1");

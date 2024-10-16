@@ -9,6 +9,7 @@ import {LibString} from "../libs/LibString.sol";
 import {LibDuck} from "../libs/LibDuck.sol";
 import {LibItems} from "../libs/LibItems.sol";
 import {ItemType, ItemTypeDTO, ItemIdDTO} from "../shared/Structs_Items.sol";
+import {DuckInfo, DuckWearableSlot} from "../shared/Structs_Ducks.sol";
 
 contract ItemFacet is AccessControl {
     event UseConsumables(uint256 indexed _tokenId, uint256[] _itemIds, uint256[] _quantities);
@@ -124,7 +125,13 @@ contract ItemFacet is AccessControl {
     ///@param _tokenId Identifier of the NFT to query
     ///@return wearableIds_ An array containing the Identifiers of the wearable items currently equipped for the NFT
     function equippedWearables(uint256 _tokenId) external view returns (uint256[] memory wearableIds_) {
-        wearableIds_ = LibAppStorage.diamondStorage().ducks[_tokenId].equippedWearables;
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        DuckInfo storage duck = s.ducks[_tokenId];
+        uint16 wearbleSlotCount = uint16(type(DuckWearableSlot).max) + 1;
+        wearableIds_ = new uint256[](wearbleSlotCount);
+        for (uint16 i; i < wearbleSlotCount; i++) {
+            wearableIds_[i] = duck.equippedWearables[i];
+        }
     }
 
     ///@notice Query the item type of a particular item
