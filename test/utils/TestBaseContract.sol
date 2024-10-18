@@ -28,7 +28,7 @@ abstract contract TestBaseContract is Test {
         // console2.log("msg.sender during setup", msg.sender);
 
         // Test on Sepolia testnet
-        string memory sepoliaRpcUrl = vm.envString("SEPOLIA_RPC_URL");
+        string memory sepoliaRpcUrl = vm.envString("BASE_SEPOLIA_RPC_URL");
 
         uint256 testnetFork = vm.createFork(sepoliaRpcUrl);
         vm.selectFork(testnetFork);

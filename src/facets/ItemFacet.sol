@@ -137,7 +137,7 @@ contract ItemFacet is AccessControl {
     ///@notice Query the item type of a particular item
     ///@param _itemId Item to query
     ///@return itemType_ A struct containing details about the item type of an item with identifier `_itemId`
-    function getItemType(uint256 _itemId) public view returns (ItemType memory itemType_) {
+    function getItemType(uint256 _itemId) external view returns (ItemType memory itemType_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         require(_itemId < s.itemTypes.length, "ItemsFacet: Item type doesn't exist");
         itemType_ = s.itemTypes[_itemId];
@@ -170,119 +170,19 @@ contract ItemFacet is AccessControl {
 
     /// WRITE FUNCTIONS --------------------------------------------------
 
-    // ///@notice Allow the owner of a claimed aavegotchi to equip/unequip wearables to his aavegotchi
-    // ///@dev Only valid for claimed ducks
-    // ///@dev A zero value will unequip that slot and a non-zero value will equip that slot with the wearable whose identifier is provided
-    // ///@dev A wearable cannot be equipped in the wrong slot
-    // ///@param _tokenId The identifier of the aavegotchi to make changes to
-    // ///@param _wearablesToEquip An array containing the identifiers of the wearables to equip
-    // function equipWearables(
-    //     uint256 _tokenId,
-    //     uint16[EQUIPPED_WEARABLE_SLOTS] calldata _wearablesToEquip
-    // ) isDuckOwner(_tokenId) onlyUnlocked(_tokenId) external {
-    //     uint256[EQUIPPED_WEARABLE_SLOTS] memory _depositIds;
-    //     _equipWearables(_tokenId, _wearablesToEquip, _depositIds);
-    // }
+    ///@notice Allow the owner of a claimed duck to equip/unequip wearables to his duck
+    ///@dev Only valid for claimed ducks
+    ///@dev A zero value will unequip that slot and a non-zero value will equip that slot with the wearable whose identifier is provided
+    ///@dev A wearable cannot be equipped in the wrong slot
+    ///@param _tokenId The identifier of the duck to make changes to
+    ///@param _wearablesToEquip An array containing the identifiers of the wearables to equip
+    function equipWearables(
+        uint256 _tokenId,
+        uint16[] calldata _wearablesToEquip
+    ) isDuckOwner(_tokenId) onlyUnlocked(_tokenId) external {
+        LibItems._equipWearables(_msgSender(), _tokenId, _wearablesToEquip);
+    }
 
-    // function _equipWearables(
-    //     uint256 _tokenId,
-    //     uint16[EQUIPPED_WEARABLE_SLOTS] calldata _wearablesToEquip,
-    //     uint256[EQUIPPED_WEARABLE_SLOTS] memory _depositIdsToEquip
-    // ) internal {
-    //     DuckInfo storage duck = s.ducks[_tokenId];
-
-    //     // Get the GotchiEquippedDepositsInfo struct
-    //     GotchiEquippedDepositsInfo storage duckDepositInfo = s.gotchiEquippedDepositsInfo[_tokenId];
-
-    //     // Only valid for claimed ducks
-    //     require(duck.status == DuckStatusType.DUCK, "LibDuck: Only valid for Hatched Ducks");
-    //     emit LibItemsEvents.EquipWearables(_tokenId, duck.equippedWearables, _wearablesToEquip);
-    //     emit LibItemsEvents.EquipDelegatedWearables(_tokenId, duckDepositInfo.equippedDepositIds, _depositIdsToEquip);
-
-    //     address sender = LibMeta.msgSender();
-
-    //     for (uint256 slot; slot < EQUIPPED_WEARABLE_SLOTS; slot++) {
-    //         uint256 toEquipId = _wearablesToEquip[slot];
-    //         uint256 existingEquippedWearableId = duck.equippedWearables[slot];
-
-    //         uint256 depositIdToEquip = _depositIdsToEquip[slot];
-    //         uint256 existingEquippedDepositId = duckDepositInfo.equippedDepositIds[slot];
-
-    //         // Users might replace Wearables they own with delegated Werables.
-    //         // For this reason, we only skip this slot if both the Wearable tokenId & depositId match
-    //         if (toEquipId == existingEquippedWearableId && existingEquippedDepositId == depositIdToEquip) {
-    //             continue;
-    //         }
-
-    //         // To prevent the function `removeFromParent` to revert, it's necessary first to unequip this Wearable (delete from storage slot)
-    //         // This is an edge case introduced by delegated Wearables, since users can now equip and unequip Wearables of same tokenId (but different depositId)
-    //         // This is also necessary regardless of whether the item is transferrable or not. Non-transferrable items can still be equipped/unequipped (they just aren't transferred back to the user's wallet)
-    //         delete duck.equippedWearables[slot];
-
-    //         //Handle unequipping wearable case
-    //         if (existingEquippedWearableId != 0 && s.itemTypes[existingEquippedWearableId].canBeTransferred) {
-    //             //If no deposits have been made to this gotchi for this slot, it's a normal wearable unequipping case.
-    //             if (duckDepositInfo.equippedDepositIds[slot] == 0) {
-    //                 // remove wearable from Duck and transfer item to owner
-    //                 LibItems.removeFromParent(address(this), _tokenId, existingEquippedWearableId, 1);
-    //                 LibItems.addToOwner(sender, existingEquippedWearableId, 1);
-    //                 IEventHandlerFacet(s.wearableDiamond).emitTransferSingleEvent(sender, address(this), sender, existingEquippedWearableId, 1);
-    //                 emit LibERC1155.TransferFromParent(address(this), _tokenId, existingEquippedWearableId, 1);
-    //             } else {
-    //                 // remove wearable from Duck
-    //                 LibDelegatedWearables.removeDelegatedWearableFromGotchi(slot, _tokenId, existingEquippedWearableId);
-    //             }
-    //         }
-
-    //         //Handle equipping wearables case
-    //         if (toEquipId != 0) {
-    //             ItemType storage itemType = s.itemTypes[toEquipId];
-    //             require(duck.level >= itemType.minLevel, "ItemsFacet: Duck level lower than minLevel");
-    //             require(itemType.category == LibItems.ITEM_CATEGORY_WEARABLE, "ItemsFacet: Only wearables can be equippped");
-    //             require(itemType.slotPositions[slot] == true, "ItemsFacet: Wearable can't be equipped in slot");
-    //             {
-    //                 bool canBeEquipped;
-    //                 uint8[] memory allowedCollaterals = itemType.allowedCollaterals;
-    //                 if (allowedCollaterals.length > 0) {
-    //                     uint256 collateralIndex = s.collateralTypeIndexes[duck.collateralType];
-
-    //                     for (uint256 i; i < allowedCollaterals.length; i++) {
-    //                         if (collateralIndex == allowedCollaterals[i]) {
-    //                             canBeEquipped = true;
-    //                             break;
-    //                         }
-    //                     }
-    //                     require(canBeEquipped, "ItemsFacet: Wearable can't be used for this collateral");
-    //                 }
-    //             }
-
-    //             // Equips new Wearable
-    //             // Wearable is equipped one by one, even if hands has the same id (but different depositId)
-    //             duck.equippedWearables[slot] = uint16(toEquipId);
-    //             duckDepositInfo.equippedDepositIds[slot] = depositIdToEquip;
-
-    //             // If no deposits have been made to this gotchi for this slot, it's a normal wearable equipping case.
-    //             if (depositIdToEquip == 0) {
-    //                 // We need to check if wearable is already in the inventory, if it is, we don't transfer it from the owner
-    //                 uint256 maxBalance = slot == LibItems.WEARABLE_SLOT_HAND_LEFT || slot == LibItems.WEARABLE_SLOT_HAND_RIGHT ? 2 : 1;
-    //                 if(s.nftItemBalances[address(this)][_tokenId][toEquipId] >= maxBalance) continue;
-    //                 require(s.ownerItemBalances[sender][toEquipId] >= 1, "ItemsFacet: Wearable isn't in inventory");
-
-    //                 //Transfer to Duck
-    //                 LibItems.removeFromOwner(sender, toEquipId, 1);
-    //                 LibItems.addToParent(address(this), _tokenId, toEquipId, 1);
-    //                 emit LibERC1155.TransferToParent(address(this), _tokenId, toEquipId, 1);
-    //                 IEventHandlerFacet(s.wearableDiamond).emitTransferSingleEvent(sender, sender, address(this), toEquipId, 1);
-    //                 LibERC1155Marketplace.updateERC1155Listing(address(this), toEquipId, sender);
-    //             } else {
-    //                 // add wearable to Duck and add delegation
-    //                 LibDelegatedWearables.addDelegatedWearableToGotchi(depositIdToEquip, _tokenId, toEquipId);
-    //             }
-    //         }
-    //     }
-    //     LibDuck.interact(_tokenId);
-
-    // }
 
     // ///@notice Allow the owner of an NFT to use multiple consumable items for his duck
     // ///@dev Only valid for claimed ducks

@@ -31,7 +31,7 @@ contract DuckGameFacet is AccessControl {
     function buyEggs(address _to) external returns (uint32 duckId_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 currentCycleId = s.currentCycleId;
-        require(currentCycleId == 1, "DuckGameFacet: Can only purchase from cycle 1");
+        // require(currentCycleId == 1, "DuckGameFacet: Can only purchase from cycle 1");
         Cycle storage cycle = s.cycles[currentCycleId];
         uint256 price = cycle.eggsPrice;
 
@@ -186,7 +186,7 @@ contract DuckGameFacet is AccessControl {
     ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used
     ///@param _tokenId The identifier of the NFT to query
     ///@return availableSkillPoints_ An unsigned integer which represents the available skill points of an NFT with identifier `_tokenId`
-    function availableSkillPoints(uint256 _tokenId) public view returns (uint256 availableSkillPoints_) {
+    function availableSkillPoints(uint256 _tokenId) external view returns (uint256 availableSkillPoints_) {
         availableSkillPoints_ = LibDuck.availableSkillPoints(_tokenId);
     }
 
@@ -294,7 +294,7 @@ contract DuckGameFacet is AccessControl {
         isLocked = LibAppStorage.diamondStorage().ducks[_tokenId].locked;
     }
 
-    function getDuckBaseCharacteristics(uint32 _tokenId) public view returns (int16[] memory characteristics_) {
+    function getDuckBaseCharacteristics(uint32 _tokenId) external view returns (int16[] memory characteristics_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         // cast to uint256 for CollateralTypes key
         uint256 cycleId = uint256(s.ducks[_tokenId].cycleId);

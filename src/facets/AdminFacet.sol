@@ -284,7 +284,7 @@ contract AdminFacet is AccessControl {
     ///@dev Only valid for existing items that can be purchased with GHST
     ///@param _itemIds The items whose price is to be changed
     ///@param _newPrices The new prices of the items
-    function batchUpdateItemsPrice(uint256[] calldata _itemIds, uint256[] calldata _newPrices) public isAdmin {
+    function batchUpdateItemsPrice(uint256[] calldata _itemIds, uint256[] calldata _newPrices) external isAdmin {
         require(_itemIds.length == _newPrices.length, "AdminFacet: Items must be the same length as prices");
         AppStorage storage s = LibAppStorage.diamondStorage();
         for (uint256 i; i < _itemIds.length; i++) {
