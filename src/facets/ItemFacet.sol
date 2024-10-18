@@ -9,7 +9,7 @@ import {LibString} from "../libs/LibString.sol";
 import {LibDuck} from "../libs/LibDuck.sol";
 import {LibItems} from "../libs/LibItems.sol";
 import {ItemType, ItemTypeDTO, ItemIdDTO} from "../shared/Structs_Items.sol";
-import {DuckInfo, DuckWearableSlot} from "../shared/Structs_Ducks.sol";
+import {DuckInfo, DuckWearableSlot, DuckStatusType} from "../shared/Structs_Ducks.sol";
 
 contract ItemFacet is AccessControl {
     event UseConsumables(uint256 indexed _tokenId, uint256[] _itemIds, uint256[] _quantities);
@@ -184,70 +184,18 @@ contract ItemFacet is AccessControl {
     }
 
 
-    // ///@notice Allow the owner of an NFT to use multiple consumable items for his duck
-    // ///@dev Only valid for claimed ducks
-    // ///@dev Consumables can be used to boost kinship/XP of an duck
-    // ///@param _tokenId Identtifier of duck to use the consumables on
-    // ///@param _itemIds An array containing the identifiers of the items/consumables to use
-    // ///@param _quantities An array containing the quantity of each consumable to use
-    // function useConsumables(
-    //     uint256 _tokenId,
-    //     uint256[] calldata _itemIds,
-    //     uint256[] calldata _quantities
-    // ) external onlyUnlocked(_tokenId) isDuckOwner(_tokenId) {
-    //     require(_itemIds.length == _quantities.length, "ItemsFacet: _itemIds length != _quantities length");
-    //     require(s.ducks[_tokenId].status == DuckStatusType.DUCK, "LibDuck: Only valid for Hatched Duck");
-
-    //     address sender = LibMeta.msgSender();
-    //     for (uint256 i; i < _itemIds.length; i++) {
-    //         uint256 itemId = _itemIds[i];
-    //         uint256 quantity = _quantities[i];
-    //         ItemType memory itemType = s.itemTypes[itemId];
-    //         require(itemType.category == LibItems.ITEM_CATEGORY_CONSUMABLE, "ItemsFacet: Item isn't consumable");
-
-    //         LibItems.removeFromOwner(sender, itemId, quantity);
-
-    //         //Increase kinship
-    //         if (itemType.kinshipBonus > 0) {
-    //             uint256 kinship = (uint256(int256(itemType.kinshipBonus)) * quantity) + s.ducks[_tokenId].interactionCount;
-    //             s.ducks[_tokenId].interactionCount = kinship;
-    //         } else if (itemType.kinshipBonus < 0) {
-    //             uint256 kinshipBonus = LibAppStorage.abs(itemType.kinshipBonus) * quantity;
-    //             if (s.ducks[_tokenId].interactionCount > kinshipBonus) {
-    //                 s.ducks[_tokenId].interactionCount -= kinshipBonus;
-    //             } else {
-    //                 s.ducks[_tokenId].interactionCount = 0;
-    //             }
-    //         }
-
-    //         {
-    //             // prevent stack too deep error with braces here
-    //             //Boost traits and reset clock
-    //             bool boost = false;
-    //             for (uint256 j; j < NUMERIC_TRAITS_NUM; j++) {
-    //                 if (itemType.traitModifiers[j] != 0) {
-    //                     boost = true;
-    //                     break;
-    //                 }
-    //             }
-    //             if (boost) {
-    //                 s.ducks[_tokenId].lastTemporaryBoost = uint40(block.timestamp);
-    //                 s.ducks[_tokenId].temporaryTraitBoosts = itemType.traitModifiers;
-    //             }
-    //         }
-
-    //         //Increase experience
-    //         if (itemType.experienceBonus > 0) {
-    //             uint256 experience = (uint256(itemType.experienceBonus) * quantity) + s.ducks[_tokenId].experience;
-    //             s.ducks[_tokenId].experience = experience;
-    //         }
-
-    //         itemType.totalQuantity -= quantity;
-    //         LibDuck.interact(_tokenId);
-    //         LibERC1155Marketplace.updateERC1155Listing(address(this), itemId, sender);
-    //     }
-    //     emit UseConsumables(_tokenId, _itemIds, _quantities);
-    // 		// TODO: wip event
-    //     // IEventHandlerFacet(s.wearableDiamond).emitTransferBatchEvent(sender, sender, address(0), _itemIds, _quantities);
-    // }
+    ///@notice Allow the owner of an NFT to use multiple consumable items for his duck
+    ///@dev Only valid for claimed ducks
+    ///@dev Consumables can be used to boost kinship/XP of an duck
+    ///@param _tokenId Identtifier of duck to use the consumables on
+    ///@param _itemIds An array containing the identifiers of the items/consumables to use
+    ///@param _quantities An array containing the quantity of each consumable to use
+    function useConsumables(
+        uint256 _tokenId,
+        uint256[] calldata _itemIds,
+        uint256[] calldata _quantities
+    ) external isDuckOwner(_tokenId) {
+        require(LibAppStorage.diamondStorage().ducks[_tokenId].status == DuckStatusType.DUCK, "LibDuck: Only valid for Hatched Duck");
+        LibItems._useConsumables(_msgSender(), _tokenId, _itemIds, _quantities);
+    }
 }

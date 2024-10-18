@@ -14,6 +14,7 @@ forge script scripts/createFirstCycle.s.sol:CreateFirstCycle --broadcast -vvvv
 ```
 
 ## TODO 
+- [ ] Fix characterstics / statistics / traits on item, wearables / consumables etc 
 - [ ] Add Respec for Ducks feature
 - [~] Add Items feature (set first skin for cycle)
 --> is badges part or separate of wearables items ?

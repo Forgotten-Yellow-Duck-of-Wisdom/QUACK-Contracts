@@ -4,12 +4,14 @@ pragma solidity >=0.8.21;
 
 import {AppStorage, LibAppStorage} from "./LibAppStorage.sol";
 import {ItemType, ItemTypeDTO, ItemTypeCategory} from "../shared/Structs_Items.sol";
-import {DuckInfo, DuckStatusType, DuckWearableSlot} from "../shared/Structs_Ducks.sol";
+import {DuckInfo, DuckStatusType, DuckStatisticsType, DuckWearableSlot} from "../shared/Structs_Ducks.sol";
 import {AccessControl} from "../shared/AccessControl.sol";
 import {LibDuck} from "./LibDuck.sol";
 import {LibERC1155} from "./LibERC1155.sol";
-
+import {LibMaths} from "./LibMaths.sol";
 library LibItems {
+    event EquipWearables(uint256 _tokenId, uint16[] _equippedWearables, uint16[] _wearablesToEquip);
+    event UseConsumables(uint256 _tokenId, uint256[] _itemIds, uint256[] _quantities);
     function itemBalancesOfTokenWithTypes(address _tokenContract, uint256 _tokenId)
         internal
         view
@@ -208,8 +210,7 @@ library LibItems {
         // Only valid for claimed ducks
         require(duck.status == DuckStatusType.DUCK, "LibDuck: Only valid for Hatched Ducks");
         // TODO : wip events
-        // emit LibItemsEvents.EquipWearables(_tokenId, duck.equippedWearables, _wearablesToEquip);
-        // emit LibItemsEvents.EquipDelegatedWearables(_tokenId, duckDepositInfo.equippedDepositIds, _depositIdsToEquip);
+        // emit EquipWearables(_tokenId, duck.equippedWearables, _wearablesToEquip);
 
         for (uint16 slot; slot < wearableSlotsTotal; slot++) {
             uint256 toEquipId = _wearablesToEquip[slot];
@@ -285,4 +286,86 @@ library LibItems {
             );
         }
     }
+
+        ///@notice Allow the owner of an NFT to use multiple consumable items for his duck
+    ///@dev Only valid for claimed ducks
+    ///@dev Consumables can be used to boost kinship/XP of an duck
+    ///@param _tokenId Identtifier of duck to use the consumables on
+    ///@param _itemIds An array containing the identifiers of the items/consumables to use
+    ///@param _quantities An array containing the quantity of each consumable to use
+    function _useConsumables(
+        address _owner,
+        uint256 _tokenId,
+        uint256[] calldata _itemIds,
+        uint256[] calldata _quantities
+    ) internal {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        require(_itemIds.length == _quantities.length, "ItemsFacet: _itemIds length != _quantities length");
+        require(s.ducks[_tokenId].locked == false, "LibAppStorage: Only callable on unlocked Duck");
+
+        for (uint256 i; i < _itemIds.length; i++) {
+            uint256 itemId = _itemIds[i];
+            uint256 quantity = _quantities[i];
+            ItemType memory itemType = s.itemTypes[itemId];
+            require(itemType.category == uint8(ItemTypeCategory.CONSUMABLE), "ItemsFacet: Item isn't consumable");
+
+            LibItems.removeFromOwner(_owner, itemId, quantity);
+
+            //Increase kinship
+            if (itemType.kinshipBonus > 0) {
+                uint256 kinship = (uint256(int256(itemType.kinshipBonus)) * quantity) + s.ducks[_tokenId].interactionCount;
+                s.ducks[_tokenId].interactionCount = kinship;
+            } else if (itemType.kinshipBonus < 0) {
+                uint256 kinshipBonus = LibMaths.abs(itemType.kinshipBonus) * quantity;
+                if (s.ducks[_tokenId].interactionCount > kinshipBonus) {
+                    s.ducks[_tokenId].interactionCount -= kinshipBonus;
+                } else {
+                    s.ducks[_tokenId].interactionCount = 0;
+                }
+            }
+
+            /// @dev : old code, need to be refactored
+            // {
+            //     // prevent stack too deep error with braces here
+            //     //Boost traits and reset clock
+            //     bool boost = false;
+            //     for (uint256 j; j < NUMERIC_TRAITS_NUM; j++) {
+            //         if (itemType.traitModifiers[j] != 0) {
+            //             boost = true;
+            //             break;
+            //         }
+            //     }
+            //     if (boost) {
+            //         s.ducks[_tokenId].lastTemporaryBoost = uint40(block.timestamp);
+            //         s.ducks[_tokenId].temporaryTraitBoosts = itemType.traitModifiers;
+            //     }
+            // }
+
+            /// @dev : new code, need to be tested
+            {
+                // prevent stack too deep error with braces here
+                //Increase Statistics 
+                for (uint16 j; j < (uint16(type(DuckStatisticsType).max) + 1); j++) {
+                    if (itemType.statisticsModifiers[j] != 0) {
+                        s.ducks[_tokenId].statistics[j] += itemType.statisticsModifiers[j];
+                    }
+                }
+            }
+
+            //Increase experience
+            if (itemType.experienceBonus > 0) {
+                uint256 experience = (uint256(itemType.experienceBonus) * quantity) + s.ducks[_tokenId].experience;
+                s.ducks[_tokenId].experience = experience;
+            }
+
+            itemType.totalQuantity -= quantity;
+            LibDuck.interact(_tokenId);
+            // TODO : wip marketplace
+            // LibERC1155Marketplace.updateERC1155Listing(address(this), itemId, _owner);
+        }
+        emit UseConsumables(_tokenId, _itemIds, _quantities);
+    		// TODO: wip event
+        // IEventHandlerFacet(s.wearableDiamond).emitTransferBatchEvent(_owner, _owner, address(0), _itemIds, _quantities);
+    }
+
 }

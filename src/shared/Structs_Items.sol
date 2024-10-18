@@ -23,7 +23,7 @@ struct ItemType {
     // [Experience, Rarity Score, Kinship, Eye Color, Eye Shape, Brain Size, Spookiness, Aggressiveness, Energy]
     //[WEARABLE ONLY] How much the wearable modifies each trait. Should not be more than +-5 total
     int16[] characteristicsModifiers;
-    //[WEARABLE ONLY] How much the wearable modifies each stat. Should not be more than +-5 total
+    //[WEARABLE + CONSUMABLE(TODO?) ONLY] How much the wearable modifies each stat. Should not be more than +-5 total
     int16[] statisticsModifiers;
     //[WEARABLE ONLY] The slots that this wearable can be added to.
     bool[] slotPositions;
@@ -51,7 +51,7 @@ struct ItemType {
     uint8 category;
     //[CONSUMABLE ONLY] How much this consumable boosts (or reduces) kinship score
     int16 kinshipBonus;
-    //[CONSUMABLE ONLY]
+    //[CONSUMABLE ONLY] How much this consumable boosts (or reduces) experience
     uint32 experienceBonus;
 }
 
