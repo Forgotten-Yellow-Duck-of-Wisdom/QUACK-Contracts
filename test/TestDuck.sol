@@ -14,14 +14,17 @@ contract TestDuck is TestBaseContract {
     // Utils
     ///////////////////////////////////////////////////////////////////////////////////
 
-    function util_createCycle(uint24 _cycleMaxSize, uint256 _eggPrice, uint256 _bodyColorItemId) internal {
-        uint256 createdId = diamond.createCycle(_cycleMaxSize, _eggPrice, _bodyColorItemId);
+    function util_createCycle(uint24 _cycleMaxSize, uint256 _eggPrice, uint256[] memory _bodyColorItemIds) internal {
+        uint256 createdId = diamond.createCycle(_cycleMaxSize, _eggPrice, _bodyColorItemIds);
         (cycleId, cycle) = diamond.currentCycle();
         assertEq(createdId, cycleId, "util_createCycle: Invalid Cycle Id");
         assertEq(cycle.cycleMaxSize, _cycleMaxSize, "util_createCycle: Invalid Cycle Max Size");
         assertEq(cycle.eggsPrice, _eggPrice, "util_createCycle: Invalid Egg Price");
         assertEq(cycle.totalCount, 0, "util_createCycle: Invalid Total Count");
-        assertEq(cycle.bodyColorItemId, _bodyColorItemId, "util_createCycle: Invalid Body Color Item Id");
+        assertEq(cycle.allowedBodyColorItemIds.length, _bodyColorItemIds.length, "util_createCycle: Invalid Allowed Body Color Item Id");
+        for (uint256 i; i < _bodyColorItemIds.length; i++) {
+            assertEq(cycle.allowedBodyColorItemIds[i], _bodyColorItemIds[i], "util_createCycle: Invalid Allowed Body Color Item Id");
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////
@@ -32,7 +35,9 @@ contract TestDuck is TestBaseContract {
 
         // TODO : test larger cycle max size
         // create First Duck Cycle
-        util_createCycle(1000, 1, 0);
+        uint256[] memory colorItemIds = new uint256[](1);
+        colorItemIds[0] = 0;
+        util_createCycle(1000, 1, colorItemIds);
 
         // add QUACK as collateral to first cycle
         quackModifiers = new int16[](6);

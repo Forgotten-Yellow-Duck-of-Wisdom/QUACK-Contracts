@@ -59,11 +59,12 @@ enum DuckBadgeSlot {
 /// MARK: STORAGE
 /////////////////////////////////
 struct Cycle {
-    //The max size of the Cycle
+    //The max number of ducks of the Cycle
     uint256 cycleMaxSize;
     uint256 eggsPrice;
     uint24 totalCount;
-    uint256 bodyColorItemId;
+    uint256[] allowedBodyColorItemIds;
+    // uint256[] allowedWearableItemIds;
 }
 
 struct DuckInfo {

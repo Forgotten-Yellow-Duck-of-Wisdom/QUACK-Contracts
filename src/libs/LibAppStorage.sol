@@ -67,6 +67,7 @@ struct AppStorage {
     mapping(string => bool) duckNamesUsed;
     mapping(uint64 => uint256) duckRespecCount;
     mapping(uint64 => uint256) duckIdToRandomNumber;
+    mapping(uint64 => uint8) eggRepickOptions;
     // token id => Duck Profile struct infos
     mapping(uint64 => DuckInfo) ducks;
     // Mapping owner address => all possessed duck token id

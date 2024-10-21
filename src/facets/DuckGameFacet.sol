@@ -19,6 +19,7 @@ contract DuckGameFacet is AccessControl {
     event BuyEggs(address indexed _from, address indexed _to, uint64 _duckId, uint256 _price);
 
     event OpenEggs(uint64[] _duckIds);
+    event RepickEgg(uint64 _duckId, uint8 _baseOption);
 
     ////////////////////////////////////////////////////////////
     // WRITE FUNCTIONS
@@ -61,15 +62,27 @@ contract DuckGameFacet is AccessControl {
         AppStorage storage s = LibAppStorage.diamondStorage();
         address owner = _msgSender();
         uint256 requestPrice = s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit, s.vrfNumWords);
-        require(msg.value >= requestPrice * _duckIds.length, "VRFFacet: Not enough native funds for chainlink VRF");
+        require(msg.value >= requestPrice * _duckIds.length, "DuckGameFacet: Not enough native funds for chainlink VRF");
         for (uint256 i; i < _duckIds.length; i++) {
             uint64 duckId = _duckIds[i];
-            require(s.ducks[duckId].status == DuckStatusType.CLOSED_EGGS, "VRFFacet: Eggs is not closed");
-            require(owner == s.ducks[duckId].owner, "VRFFacet: Only duck owner can open an egg");
-            require(s.ducks[duckId].locked == false, "VRFFacet: Can't open eggs when it is locked");
+            require(s.ducks[duckId].status == DuckStatusType.CLOSED_EGGS, "DuckGameFacet: Eggs is not closed");
+            require(owner == s.ducks[duckId].owner, "DuckGameFacet: Only duck owner can open an egg");
+            require(s.ducks[duckId].locked == false, "DuckGameFacet: Can't open eggs when it is locked");
             LibChainlinkVRF.requestRandomWords(duckId, requestPrice);
         }
         emit OpenEggs(_duckIds);
+    }
+
+    function repickEgg(uint64 _duckId) external {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        address owner = _msgSender();
+        require(s.ducks[_duckId].status == DuckStatusType.OPEN_EGG, "DuckGameFacet: Egg not open");
+        require(owner == s.ducks[_duckId].owner, "DuckGameFacet: Only duck owner can open an egg");
+        require(s.ducks[_duckId].locked == false, "DuckGameFacet: Can't open eggs when it is locked");
+        require(s.eggRepickOptions[_duckId] < 6, "DuckGameFacet: Repick limit reached");
+        s.eggRepickOptions[_duckId] += 3;
+
+        emit RepickEgg(_duckId, s.eggRepickOptions[_duckId]);
     }
 
     ///@notice Allows the owner of an NFT(Portal) to claim an Duck provided it has been unlocked
@@ -163,7 +176,7 @@ contract DuckGameFacet is AccessControl {
     ///@param _duckId Identifier of the NFT to query
     ///@return eggDuckTraits_ A struct containing all details about the NFT with identifier `_duckId`
 
-    function eggDuckTraits(uint64 _duckId) external view returns (EggDuckTraitsDTO[10] memory eggDuckTraits_) {
+    function eggDuckTraits(uint64 _duckId) external view returns (EggDuckTraitsDTO[3] memory eggDuckTraits_) {
         eggDuckTraits_ = LibDuck.eggDuckTraits(_duckId);
     }
 

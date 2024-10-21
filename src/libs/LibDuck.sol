@@ -39,6 +39,7 @@ library LibDuck {
         require(s.ducks[duckId].status == DuckStatusType.VRF_PENDING, "VrfFacet: VRF is not pending");
         s.ducks[duckId].status = DuckStatusType.OPEN_EGG;
         s.duckIdToRandomNumber[duckId] = _randomWords[0];
+        s.eggRepickOptions[duckId] = 0;
 
         emit EggOpened(duckId);
     }
@@ -54,7 +55,7 @@ library LibDuck {
         DuckInfo storage duck = s.ducks[_duckId];
         console2.log("duck.status", uint256(duck.status));
         require(duck.status == DuckStatusType.OPEN_EGG, "DuckGameFacet: Egg not open");
-        require(_option < 10, "DuckGameFacet: Only 10 duck options available");
+        require(_option >= s.eggRepickOptions[_duckId] && _option <= (s.eggRepickOptions[_duckId] + 3), "DuckGameFacet: Invalid option");
         uint256 randomNumber = s.duckIdToRandomNumber[_duckId];
         uint16 cycleId = s.ducks[_duckId].cycleId;
 
@@ -189,26 +190,26 @@ library LibDuck {
     }
 
     // TODO : rework !!
-    ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
-    ///@dev only valid for claimed ducks
-    ///@param _duckId The identifier of the NFT to spend the skill points on
-    ///@param _values An array of four integers that represent the values of the skill points
-    function spendSkillPoints(uint64 _duckId, int16[4] calldata _values) internal {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        //To test: Prevent underflow (is this ok?), see require below
-        uint256 totalUsed;
-        for (uint16 index; index < _values.length; index++) {
-            totalUsed += LibMaths.abs(_values[index]);
+    // ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
+    // ///@dev only valid for claimed ducks
+    // ///@param _duckId The identifier of the NFT to spend the skill points on
+    // ///@param _values An array of four integers that represent the values of the skill points
+    // function spendSkillPoints(uint64 _duckId, int16[4] calldata _values) internal {
+    //     AppStorage storage s = LibAppStorage.diamondStorage();
+    //     //To test: Prevent underflow (is this ok?), see require below
+    //     uint256 totalUsed;
+    //     for (uint16 index; index < _values.length; index++) {
+    //         totalUsed += LibMaths.abs(_values[index]);
 
-            s.ducks[_duckId].characteristics[index] += _values[index];
-        }
-        // handles underflow
-        require(availableSkillPoints(_duckId) >= totalUsed, "DuckGameFacet: Not enough skill points");
-        //Increment used skill points
-        s.ducks[_duckId].usedSkillPoints += totalUsed;
-        // TODO : wip events
-        // emit SpendSkillpoints(_duckId, _values);
-    }
+    //         s.ducks[_duckId].characteristics[index] += _values[index];
+    //     }
+    //     // handles underflow
+    //     require(availableSkillPoints(_duckId) >= totalUsed, "DuckGameFacet: Not enough skill points");
+    //     //Increment used skill points
+    //     s.ducks[_duckId].usedSkillPoints += totalUsed;
+    //     // TODO : wip events
+    //     // emit SpendSkillpoints(_duckId, _values);
+    // }
 
     ///////////////////////////////////////////
     // MARK: Read functions
@@ -360,7 +361,7 @@ library LibDuck {
         }
     }
 
-    function eggDuckTraits(uint64 _duckId) internal view returns (EggDuckTraitsDTO[10] memory eggDuckTraits_) {
+    function eggDuckTraits(uint64 _duckId) internal view returns (EggDuckTraitsDTO[3] memory eggDuckTraits_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         require(s.ducks[_duckId].status == DuckStatusType.OPEN_EGG, "DuckFacet: Egg not open");
 
@@ -368,8 +369,9 @@ library LibDuck {
 
         uint16 cycleId = s.ducks[_duckId].cycleId;
 
-        for (uint16 i; i < eggDuckTraits_.length; i++) {
-            EggDuckTraitsDTO memory single = singleEggDuckTraits(cycleId, randomNumber, i);
+        uint8 option = s.eggRepickOptions[_duckId];
+        for (uint16 i = 1; i <= eggDuckTraits_.length; i++) {
+            EggDuckTraitsDTO memory single = singleEggDuckTraits(cycleId, randomNumber, option + i);
             eggDuckTraits_[i].randomNumber = single.randomNumber;
             eggDuckTraits_[i].collateralType = single.collateralType;
             eggDuckTraits_[i].minimumStake = single.minimumStake;

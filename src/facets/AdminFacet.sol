@@ -23,9 +23,9 @@ contract AdminFacet is AccessControl {
      * @param _cycleId The unique identifier of the newly created cycle.
      * @param _cycleMaxSize The maximum number of portals allowed in the cycle.
      * @param _eggsPrice The base price of portals in the cycle, denominated in $QUACK.
-     * @param _bodyColorItemId The item ID representing the body color applied to NFTs in the cycle.
+     * @param _bodyColorItemIds The item ID representing the body color applied to NFTs in the cycle.
      */
-    event CreateCycle(uint256 indexed _cycleId, uint256 _cycleMaxSize, uint256 _eggsPrice, uint256 _bodyColorItemId);
+    event CreateCycle(uint256 indexed _cycleId, uint256 _cycleMaxSize, uint256 _eggsPrice, uint256[] _bodyColorItemIds);
     /**
      * @dev Emitted when a new collateral type is added to a cycle.
      * @param _collateralType The details of the collateral type added.
@@ -108,14 +108,14 @@ contract AdminFacet is AccessControl {
      * @dev Only callable by an admin. Ensures the previous cycle is fully occupied before creating a new one.
      * @param _cycleMaxSize The maximum number of eggs allowed in the new cycle.
      * @param _eggsPrice The base price of eggs in the new cycle, denominated in $QUACK.
-     * @param _bodyColorItemId The item ID representing the body color applied to NFTs in the new cycle.
+     * @param _bodyColorItemIds The item ID representing the body color applied to NFTs in the new cycle.
      * @return cycleId_ The unique identifier of the newly created cycle.
      *
      * @custom:dev This function initializes a new cycle by incrementing the currentCycleId,
      * setting the cycle's maximum size, eggs price, and body color item ID.
      * It also emits a CreateCycle event upon successful creation.
      */
-    function createCycle(uint24 _cycleMaxSize, uint256 _eggsPrice, uint256 _bodyColorItemId)
+    function createCycle(uint24 _cycleMaxSize, uint256 _eggsPrice, uint256[] calldata _bodyColorItemIds)
         external
         isAdmin
         returns (uint16 cycleId_)
@@ -131,8 +131,10 @@ contract AdminFacet is AccessControl {
         s.cycles[cycleId_].cycleMaxSize = _cycleMaxSize;
         s.cycles[cycleId_].eggsPrice = _eggsPrice;
         // TODO: wip items logic
-        s.cycles[cycleId_].bodyColorItemId = _bodyColorItemId;
-        emit CreateCycle(cycleId_, _cycleMaxSize, _eggsPrice, _bodyColorItemId);
+        for (uint256 i; i < _bodyColorItemIds.length; i++) {
+            s.cycles[cycleId_].allowedBodyColorItemIds.push(_bodyColorItemIds[i]);
+        }
+        emit CreateCycle(cycleId_, _cycleMaxSize, _eggsPrice, _bodyColorItemIds);
     }
 
     /**
