@@ -12,9 +12,9 @@ library LibChainlinkVRF {
     event RequestSent(uint256 requestId, uint32 numWords);
 
     // TODO : update requestRandomWords to receive a VRFExtraArgsV1 struct and handle different kind of VRF results
-    function requestRandomWords(uint256 _tokenId, uint256 _requestPrice) internal returns (uint256 requestId) {
+    function requestRandomWords(uint64 _duckId, uint256 _requestPrice) internal returns (uint256 requestId) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        s.ducks[_tokenId].status = DuckStatusType.VRF_PENDING;
+        s.ducks[_duckId].status = DuckStatusType.VRF_PENDING;
         bytes memory extraArgs = abi.encodeWithSelector(bytes4(keccak256("VRF ExtraArgsV1")), VRFExtraArgsV1(true));
         requestId = s.chainlink_vrf_wrapper.requestRandomWordsInNative{value: _requestPrice}(
             s.vrfCallbackGasLimit, s.vrfRequestConfirmations, s.vrfNumWords, extraArgs
@@ -26,7 +26,7 @@ library LibChainlinkVRF {
         //     fulfilled: false
         // });
         // s.vrfRequestIds.push(requestId);
-        s.vrfRequestIdToTokenId[requestId] = _tokenId;
+        s.vrfRequestIdToDuckId[requestId] = _duckId;
 
         // START - FOR TESTING PURPOSE ONLY
         uint256[] memory randomWords = new uint256[](1);

@@ -31,13 +31,13 @@ struct AppStorage {
     // erc20 address => collateral info struct
     mapping(address => CollateralTypeInfo) collateralTypeInfo;
     // cycleId => collateral addresses[]
-    mapping(uint256 => address[]) cycleCollateralTypes;
+    mapping(uint16 => address[]) cycleCollateralTypes;
     //
     /////////////////// Chainlink-VRF ///////////////////
     //
     /// NEW VRF 2.5
     VRFV2PlusWrapperInterface chainlink_vrf_wrapper;
-    mapping(uint256 => uint256) vrfRequestIdToTokenId;
+    mapping(uint256 => uint64) vrfRequestIdToDuckId;
     uint32 vrfCallbackGasLimit;
     uint16 vrfRequestConfirmations;
     uint32 vrfNumWords;
@@ -45,7 +45,8 @@ struct AppStorage {
     /////////////////// Ducks - Cycles ///////////////////
     //
     uint16 currentCycleId;
-    mapping(uint256 => Cycle) cycles;
+    // currentCycleId => Cycle struct
+    mapping(uint16 => Cycle) cycles;
     //
     /////////////////// Ducks - (ERC721) ///////////////////
     //
@@ -59,19 +60,19 @@ struct AppStorage {
     // DB (or/and IPFS ?)
     string baseUri;
     // id equal total Duck supply
-    uint32 duckIdCounter;
-    uint32[] duckIds;
-    mapping(uint256 => uint256) duckIdIndexes;
+    uint64 duckIdCounter;
+    uint64[] duckIds;
+    mapping(uint64 => uint64) duckIdIndexes;
     // name => current status
     mapping(string => bool) duckNamesUsed;
-    mapping(uint32 => uint256) duckRespecCount;
-    mapping(uint256 => uint256) eggIdToRandomNumber;
+    mapping(uint64 => uint256) duckRespecCount;
+    mapping(uint64 => uint256) duckIdToRandomNumber;
     // token id => Duck Profile struct infos
-    mapping(uint256 => DuckInfo) ducks;
+    mapping(uint64 => DuckInfo) ducks;
     // Mapping owner address => all possessed duck token id
-    mapping(address => uint32[]) ownerDuckIds;
-    mapping(address => mapping(uint256 => uint256)) ownerDuckIdIndexes;
-    mapping(uint256 => address) approved;
+    mapping(address => uint64[]) ownerDuckIds;
+    mapping(address => mapping(uint64 => uint64)) ownerDuckIdIndexes;
+    mapping(uint64 => address) approved;
     mapping(address => mapping(address => bool)) operators;
     //Pet operators for a Duck
     mapping(address => mapping(address => bool)) petOperators;

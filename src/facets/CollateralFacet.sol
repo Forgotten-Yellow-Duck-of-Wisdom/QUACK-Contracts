@@ -19,16 +19,16 @@ import {CollateralTypeDTO, CollateralTypeInfo} from "../shared/Structs.sol";
 contract CollateralFacet is AccessControl {
     /**
      * @dev Emitted when a Duck's collateral stake is increased.
-     * @param _tokenId The unique identifier of the Duck NFT.
+     * @param _duckId The unique identifier of the Duck NFT.
      * @param _stakeAmount The amount of collateral tokens added to the stake.
      */
-    event IncreaseStake(uint256 indexed _tokenId, uint256 _stakeAmount);
+    event IncreaseStake(uint64 indexed _duckId, uint256 _stakeAmount);
     /**
      * @dev Emitted when a Duck's collateral stake is decreased.
-     * @param _tokenId The unique identifier of the Duck NFT.
+     * @param _duckId The unique identifier of the Duck NFT.
      * @param _reduceAmount The amount of collateral tokens removed from the stake.
      */
-    event DecreaseStake(uint256 indexed _tokenId, uint256 _reduceAmount);
+    event DecreaseStake(uint64 indexed _duckId, uint256 _reduceAmount);
 
     /////////////////////////////////////////////////////////////////////////
     // MARK: READ FUNCTIONS
@@ -42,7 +42,7 @@ contract CollateralFacet is AccessControl {
      * @custom:dev This function accesses the `cycleCollateralTypes` mapping from the AppStorage
      * to fetch all collateral types associated with the given cycle ID.
      */
-    function getCycleCollateralsAddresses(uint256 _cycleId) external view returns (address[] memory collateralTypes_) {
+    function getCycleCollateralsAddresses(uint16 _cycleId) external view returns (address[] memory collateralTypes_) {
         collateralTypes_ = LibAppStorage.diamondStorage().cycleCollateralTypes[_cycleId];
     }
 
@@ -55,7 +55,7 @@ contract CollateralFacet is AccessControl {
      * @custom:dev This function fetches the collateral address from the `cycleCollateralTypes` mapping
      * and populates a `CollateralTypeDTO` struct with modifier values, primary and secondary colors, and delisted status.
      */
-    function getCycleCollateralInfo(uint256 _cycleId, uint256 _collateralId)
+    function getCycleCollateralInfo(uint16 _cycleId, uint256 _collateralId)
         external
         view
         returns (CollateralTypeDTO memory collateralInfo_)
@@ -80,7 +80,7 @@ contract CollateralFacet is AccessControl {
      * @custom:dev This function iterates through all collateral addresses associated with the given cycle ID
      * and constructs an array of `CollateralTypeDTO` structs with their respective details.
      */
-    function getCycleAllCollateralsInfos(uint256 _cycleId)
+    function getCycleAllCollateralsInfos(uint16 _cycleId)
         external
         view
         returns (CollateralTypeDTO[] memory collateralInfo_)
@@ -113,7 +113,7 @@ contract CollateralFacet is AccessControl {
     /**
      * @notice Retrieves the collateral details, including the collateral type, escrow contract, and balance for a specific Duck NFT.
      * @dev This function is only valid for Ducks that have been claimed.
-     * @param _tokenId The unique identifier of the Duck NFT to query.
+     * @param _duckId The unique identifier of the Duck NFT to query.
      * @return collateralType_ The contract address of the collateral associated with the Duck.
      * @return escrow_ The contract address of the Duck's escrow contract.
      * @return balance_ The current collateral balance of the Duck's escrow contract.
@@ -121,15 +121,15 @@ contract CollateralFacet is AccessControl {
      * @custom:dev This function ensures that the Duck has an associated escrow contract.
      * It then retrieves the collateral type and queries the ERC20 balance of the escrow contract.
      */
-    function collateralBalance(uint256 _tokenId)
+    function collateralBalance(uint64 _duckId)
         external
         view
         returns (address collateralType_, address escrow_, uint256 balance_)
     {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        escrow_ = s.ducks[_tokenId].escrow;
+        escrow_ = s.ducks[_duckId].escrow;
         require(escrow_ != address(0), "CollateralFacet: Does not have an escrow");
-        collateralType_ = s.ducks[_tokenId].collateralType;
+        collateralType_ = s.ducks[_duckId].collateralType;
         balance_ = IERC20(collateralType_).balanceOf(escrow_);
     }
 
@@ -140,18 +140,18 @@ contract CollateralFacet is AccessControl {
     /**
      * @notice Increases the collateral stake of a specific Duck NFT.
      * @dev Only the owner of the Duck can perform this action. The Duck must be in a claimed state.
-     * @param _tokenId The unique identifier of the Duck NFT to increase stake for.
+     * @param _duckId The unique identifier of the Duck NFT to increase stake for.
      * @param _stakeAmount The amount of collateral tokens to add to the current stake.
      *
      * @custom:dev This function emits an `IncreaseStake` event upon successful addition of collateral.
      * It transfers the specified collateral tokens from the sender to the Duck's escrow contract.
      */
-    function increaseStake(uint256 _tokenId, uint256 _stakeAmount) external isDuckOwner(_tokenId) {
+    function increaseStake(uint64 _duckId, uint256 _stakeAmount) external isDuckOwner(_duckId) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        address escrow = s.ducks[_tokenId].escrow;
+        address escrow = s.ducks[_duckId].escrow;
         require(escrow != address(0), "CollateralFacet: Does not have an escrow");
-        address collateralType = s.ducks[_tokenId].collateralType;
-        emit IncreaseStake(_tokenId, _stakeAmount);
+        address collateralType = s.ducks[_duckId].collateralType;
+        emit IncreaseStake(_duckId, _stakeAmount);
         LibERC20.safeTransferFrom(collateralType, _msgSender(), escrow, _stakeAmount);
     }
 
@@ -159,28 +159,28 @@ contract CollateralFacet is AccessControl {
      * @notice Decreases the collateral stake of a specific Duck NFT.
      * @dev Only the owner of the Duck can perform this action. The Duck must be unlocked.
      *      The resulting stake must not fall below the minimum required stake.
-     * @param _tokenId The unique identifier of the Duck NFT to decrease stake for.
+     * @param _duckId The unique identifier of the Duck NFT to decrease stake for.
      * @param _reduceAmount The amount of collateral tokens to remove from the current stake.
      *
      * @custom:dev This function emits a `DecreaseStake` event upon successful removal of collateral.
      * It transfers the specified collateral tokens from the Duck's escrow contract back to the sender.
      * Ensures that the remaining stake does not fall below the predefined minimum stake.
      */
-    function decreaseStake(uint256 _tokenId, uint256 _reduceAmount)
+    function decreaseStake(uint64 _duckId, uint256 _reduceAmount)
         external
-        onlyUnlocked(_tokenId)
-        isDuckOwner(_tokenId)
+        onlyUnlocked(_duckId)
+        isDuckOwner(_duckId)
     {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        address escrow = s.ducks[_tokenId].escrow;
+        address escrow = s.ducks[_duckId].escrow;
         require(escrow != address(0), "CollateralFacet: Does not have an escrow");
 
-        address collateralType = s.ducks[_tokenId].collateralType;
+        address collateralType = s.ducks[_duckId].collateralType;
         uint256 currentStake = IERC20(collateralType).balanceOf(escrow);
-        uint256 minimumStake = s.ducks[_tokenId].minimumStake;
+        uint256 minimumStake = s.ducks[_duckId].minimumStake;
 
         require(currentStake - _reduceAmount >= minimumStake, "CollateralFacet: Cannot reduce below minimum stake");
-        emit DecreaseStake(_tokenId, _reduceAmount);
+        emit DecreaseStake(_duckId, _reduceAmount);
         LibERC20.safeTransferFrom(collateralType, escrow, _msgSender(), _reduceAmount);
     }
 

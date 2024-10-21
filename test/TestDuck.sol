@@ -7,7 +7,7 @@ import {Cycle, DuckStatusType, DuckInfo, DuckInfoDTO, EggDuckTraitsDTO} from "..
 import {CollateralTypeDTO, CollateralTypeInfo} from "../src/shared/Structs.sol";
 
 contract TestDuck is TestBaseContract {
-    uint256 cycleId;
+    uint16 cycleId;
     Cycle cycle;
     int16[] quackModifiers;
     ///////////////////////////////////////////////////////////////////////////////////
@@ -63,7 +63,7 @@ contract TestDuck is TestBaseContract {
         quackToken.approve(address(diamond), mintPrice);
 
         // Mint a duck
-        uint256 duckId = diamond.buyEggs(account0);
+        uint64 duckId = diamond.buyEggs(account0);
 
         // Assert duck was minted
         assertEq(diamond.ownerOf(duckId), account0, "Egg not minted to correct address");
@@ -92,7 +92,7 @@ contract TestDuck is TestBaseContract {
 
         // Mint ducks until the cycle is full
         for (uint256 i = 0; i < cycleMaxSize; i++) {
-            uint256 duckId = diamond.buyEggs(account0);
+            uint64 duckId = diamond.buyEggs(account0);
             assertEq(diamond.ownerOf(duckId), account0, "Duck not minted to correct address");
         }
 
@@ -108,7 +108,7 @@ contract TestDuck is TestBaseContract {
     function testBasicDuckHatching() public {
         testBasicEggsMint();
         uint256 vrfPrice = diamond.getVRFRequestPrice();
-        uint256[] memory ids = new uint256[](1);
+        uint64[] memory ids = new uint64[](1);
         ids[0] = 0;
         diamond.openEggs{value: vrfPrice}(ids);
         uint256 minStake = 1;

@@ -25,5 +25,6 @@ forge script scripts/createFirstCycle.s.sol:CreateFirstCycle --broadcast -vvvv
 - [ ] add random skin per cycle at egg hatch
 - [ ] add a mapping itemId => itemManagerAddress, allowing periphery to mint specific items
 
+- [ ] uint32 ou 64 pour le duckId ?
 ## License
 MIT - see [LICSENSE.md](LICENSE.md)

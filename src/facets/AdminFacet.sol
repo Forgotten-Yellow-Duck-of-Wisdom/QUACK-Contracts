@@ -118,10 +118,10 @@ contract AdminFacet is AccessControl {
     function createCycle(uint24 _cycleMaxSize, uint256 _eggsPrice, uint256 _bodyColorItemId)
         external
         isAdmin
-        returns (uint256 cycleId_)
+        returns (uint16 cycleId_)
     {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        uint256 currentCycleId = s.currentCycleId;
+        uint16 currentCycleId = s.currentCycleId;
         require(
             s.cycles[currentCycleId].totalCount == s.cycles[currentCycleId].cycleMaxSize,
             "AdminFacet: Cycle must be full before creating new"
@@ -145,7 +145,7 @@ contract AdminFacet is AccessControl {
      * handles the global collateralTypes array to ensure uniqueness, and updates the cycleCollateralTypes
      * for the specified cycle. Emits an AddCollateralType event for each new collateral type added.
      */
-    function addCollateralTypes(uint256 _cycleId, CollateralTypeDTO[] calldata _collateralTypes) external isAdmin {
+    function addCollateralTypes(uint16 _cycleId, CollateralTypeDTO[] calldata _collateralTypes) external isAdmin {
         AppStorage storage s = LibAppStorage.diamondStorage();
         for (uint256 i; i < _collateralTypes.length; i++) {
             address newCollateralTypeAddress = _collateralTypes[i].collateralType;
@@ -334,7 +334,7 @@ contract AdminFacet is AccessControl {
     //  * @param _duckIds An array of Duck token IDs to which XP will be granted.
     //  * @param _xpValues An array of XP values corresponding to each Duck in _duckIds.
     //  */
-    function grantExperience(uint256[] calldata _duckIds, uint256[] calldata _xpValues) external isGameManager {
+    function grantExperience(uint64[] calldata _duckIds, uint256[] calldata _xpValues) external isGameManager {
         AppStorage storage s = LibAppStorage.diamondStorage();
         require(_duckIds.length == _xpValues.length, "AdminFacet: IDs must match XP array length");
         for (uint256 i; i < _duckIds.length; i++) {

@@ -42,27 +42,27 @@ contract DuckFacet is AccessControl {
 
     /**
      * @notice Fetch comprehensive information about a specific NFT.
-     * @param _tokenId The unique identifier of the NFT.
+     * @param _duckId The unique identifier of the NFT.
      * @return duckInfo_ A `DuckInfoDTO` struct encapsulating all relevant details of the NFT.
      *
      * @custom:dev This function leverages the `LibDuck` library to retrieve detailed information
-     * about the Duck associated with `_tokenId`.
+     * about the Duck associated with `_duckId`.
      */
-    function getDuckInfo(uint256 _tokenId) external view returns (DuckInfoDTO memory duckInfo_) {
-        duckInfo_ = LibDuck.getDuckInfo(_tokenId);
+    function getDuckInfo(uint64 _duckId) external view returns (DuckInfoDTO memory duckInfo_) {
+        duckInfo_ = LibDuck.getDuckInfo(_duckId);
     }
 
     /**
      * @notice Retrieve the timestamp when an NFT was claimed.
      * @dev Returns zero for unclaimed portals.
-     * @param _tokenId The unique identifier of the NFT.
+     * @param _duckId The unique identifier of the NFT.
      * @return hatchTime_ The Unix timestamp of the NFT's claim.
      *
      * @custom:dev This function accesses the `ducks` mapping from AppStorage to fetch
      * the `hatchTime` of the specified Duck.
      */
-    function duckHatchTime(uint256 _tokenId) external view returns (uint256 hatchTime_) {
-        hatchTime_ = LibAppStorage.diamondStorage().ducks[_tokenId].hatchTime;
+    function duckHatchTime(uint64 _duckId) external view returns (uint256 hatchTime_) {
+        hatchTime_ = LibAppStorage.diamondStorage().ducks[_duckId].hatchTime;
     }
 
     /**
@@ -98,7 +98,7 @@ contract DuckFacet is AccessControl {
      * @param _owner The address to query.
      * @return tokenIds_ An array of unique identifiers for each owned NFT.
      */
-    function tokenIdsOfOwner(address _owner) external view returns (uint32[] memory tokenIds_) {
+    function tokenIdsOfOwner(address _owner) external view returns (uint64[] memory tokenIds_) {
         tokenIds_ = LibAppStorage.diamondStorage().ownerDuckIds[_owner];
     }
 
@@ -124,7 +124,7 @@ contract DuckFacet is AccessControl {
      * @param _tokenIds An array of NFT identifiers to check
      * @return owners_ An array of addresses corresponding to the owners of the queried NFTs
      */
-    function batchOwnerOf(uint256[] calldata _tokenIds) external view returns (address[] memory owners_) {
+    function batchOwnerOf(uint64[] calldata _tokenIds) external view returns (address[] memory owners_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         owners_ = new address[](_tokenIds.length);
         for (uint256 i = 0; i < _tokenIds.length; i++) {
@@ -136,24 +136,24 @@ contract DuckFacet is AccessControl {
     /**
      * @notice Determine the owner of a specific NFT
      * @dev Throws for queries about invalid NFTs (those assigned to the zero address)
-     * @param _tokenId The unique identifier of the NFT
+     * @param _duckId The unique identifier of the NFT
      * @return owner_ The address of the NFT's current owner
      */
-    function ownerOf(uint256 _tokenId) external view returns (address owner_) {
-        owner_ = LibAppStorage.diamondStorage().ducks[_tokenId].owner;
-        require(owner_ != address(0), "DuckFacet: invalid _tokenId");
+    function ownerOf(uint64 _duckId) external view returns (address owner_) {
+        owner_ = LibAppStorage.diamondStorage().ducks[_duckId].owner;
+        require(owner_ != address(0), "DuckFacet: invalid _duckId");
     }
 
     /**
      * @notice Fetch the approved address for a single NFT
      * @dev Throws if the NFT doesn't exist
-     * @param _tokenId The NFT to find the approved address for
+     * @param _duckId The NFT to find the approved address for
      * @return approved_ The currently approved address for this NFT, or the zero address if there is none
      */
-    function getApproved(uint256 _tokenId) external view returns (address approved_) {
+    function getApproved(uint64 _duckId) external view returns (address approved_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        require(_tokenId < s.duckIds.length, "ERC721: tokenId is invalid");
-        approved_ = s.approved[_tokenId];
+        require(_duckId < s.duckIds.length, "ERC721: tokenId is invalid");
+        approved_ = s.approved[_duckId];
     }
 
     /**
@@ -181,13 +181,13 @@ contract DuckFacet is AccessControl {
      * @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved address for this NFT.
      * @param _from The current owner of the NFT.
      * @param _to The new owner.
-     * @param _tokenId The NFT to transfer.
+     * @param _duckId The NFT to transfer.
      * @param _data Additional data with no specified format, sent in call to `_to`.
      */
-    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes calldata _data) external {
+    function safeTransferFrom(address _from, address _to, uint64 _duckId, bytes calldata _data) external {
         address sender = _msgSender();
-        LibDuck.internalTransferFrom(sender, _from, _to, _tokenId);
-        LibERC721.checkOnERC721Received(sender, _from, _to, _tokenId, _data);
+        LibDuck.internalTransferFrom(sender, _from, _to, _duckId);
+        LibERC721.checkOnERC721Received(sender, _from, _to, _duckId, _data);
     }
 
     /**
@@ -195,15 +195,15 @@ contract DuckFacet is AccessControl {
      * @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved address for all NFTs.
      * @param _from The current owner of the NFTs.
      * @param _to The new owner.
-     * @param _tokenIds An array of NFT identifiers to transfer.
+     * @param _duckIds An array of NFT identifiers to transfer.
      * @param _data Additional data with no specified format, sent in call to `_to`.
      */
-    function safeBatchTransferFrom(address _from, address _to, uint256[] calldata _tokenIds, bytes calldata _data)
+    function safeBatchTransferFrom(address _from, address _to, uint64[] calldata _duckIds, bytes calldata _data)
         external
     {
         address sender = _msgSender();
-        for (uint256 index = 0; index < _tokenIds.length; index++) {
-            uint256 _tokenId = _tokenIds[index];
+        for (uint256 index = 0; index < _duckIds.length; index++) {
+            uint64 _tokenId = _duckIds[index];
             LibDuck.internalTransferFrom(sender, _from, _to, _tokenId);
             LibERC721.checkOnERC721Received(sender, _from, _to, _tokenId, _data);
         }
@@ -214,12 +214,12 @@ contract DuckFacet is AccessControl {
      * @dev Identical to the other function, but without the `_data` parameter (sets data to "").
      * @param _from The current owner of the NFT.
      * @param _to The new owner.
-     * @param _tokenId The NFT to transfer.
+     * @param _duckId The NFT to transfer.
      */
-    function safeTransferFrom(address _from, address _to, uint256 _tokenId) external {
+    function safeTransferFrom(address _from, address _to, uint64 _duckId) external {
         address sender = _msgSender();
-        LibDuck.internalTransferFrom(sender, _from, _to, _tokenId);
-        LibERC721.checkOnERC721Received(sender, _from, _to, _tokenId, "");
+        LibDuck.internalTransferFrom(sender, _from, _to, _duckId);
+        LibERC721.checkOnERC721Received(sender, _from, _to, _duckId, "");
     }
 
     /**
@@ -227,24 +227,24 @@ contract DuckFacet is AccessControl {
      * @dev Throws unless `msg.sender` is the current owner, an authorized operator, or the approved address for this NFT
      * @param _from The current owner of the NFT
      * @param _to The new owner
-     * @param _tokenId The NFT to transfer
+     * @param _duckId The NFT to transfer
      */
-    function transferFrom(address _from, address _to, uint256 _tokenId) external {
-        LibDuck.internalTransferFrom(_msgSender(), _from, _to, _tokenId);
+    function transferFrom(address _from, address _to, uint64 _duckId) external {
+        LibDuck.internalTransferFrom(_msgSender(), _from, _to, _duckId);
     }
 
     /**
      * @notice Change or reaffirm the approved address for an NFT
      * @dev The zero address indicates there is no approved address
      * @param _approved The new approved NFT controller
-     * @param _tokenId The NFT to approve
+     * @param _duckId The NFT to approve
      */
-    function approve(address _approved, uint256 _tokenId) external {
+    function approve(address _approved, uint64 _duckId) external {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        address owner = s.ducks[_tokenId].owner;
+        address owner = s.ducks[_duckId].owner;
         require(owner == _msgSender() || s.operators[owner][_msgSender()], "ERC721: Not owner or operator of token.");
-        s.approved[_tokenId] = _approved;
-        emit LibERC721.Approval(owner, _approved, _tokenId);
+        s.approved[_duckId] = _approved;
+        emit LibERC721.Approval(owner, _approved, _duckId);
     }
 
     /**

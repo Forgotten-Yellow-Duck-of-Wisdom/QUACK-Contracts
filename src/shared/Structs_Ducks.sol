@@ -119,7 +119,7 @@ struct EggDuckTraitsDTO {
 }
 
 struct DuckInfoDTO {
-    uint256 tokenId;
+    uint64 duckId;
     string name;
     address owner;
     uint40 hatchTime;

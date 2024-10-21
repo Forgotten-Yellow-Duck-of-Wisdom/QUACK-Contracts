@@ -24,10 +24,10 @@ import "forge-std/Test.sol";
 // error ERC20NotEnoughBalance(address sender);
 
 library LibDuck {
-    event DuckInteract(uint256 indexed _tokenId, uint256 kinship);
-    event EggOpened(uint256 indexed tokenId);
-    event DuckXPAdded(uint256 indexed tokenId, uint256 level, uint256 xp);
-    event DuckLevelUp(uint256 indexed tokenId, uint256 level);
+    event DuckInteract(uint64 indexed duckId, uint256 kinship);
+    event EggOpened(uint64 indexed duckId);
+    event DuckXPAdded(uint64 indexed duckId, uint256 level, uint256 xp);
+    event DuckLevelUp(uint64 indexed duckId, uint256 level);
     ///////////////////////////////////////////
     // MARK: Write functions
     ///////////////////////////////////////////
@@ -35,28 +35,28 @@ library LibDuck {
     // called by Chainlink vrf callback
     function openEggWithVRF(uint256 _requestId, uint256[] memory _randomWords) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        uint256 tokenId = s.vrfRequestIdToTokenId[_requestId];
-        require(s.ducks[tokenId].status == DuckStatusType.VRF_PENDING, "VrfFacet: VRF is not pending");
-        s.ducks[tokenId].status = DuckStatusType.OPEN_EGG;
-        s.eggIdToRandomNumber[tokenId] = _randomWords[0];
+        uint64 duckId = s.vrfRequestIdToDuckId[_requestId];
+        require(s.ducks[duckId].status == DuckStatusType.VRF_PENDING, "VrfFacet: VRF is not pending");
+        s.ducks[duckId].status = DuckStatusType.OPEN_EGG;
+        s.duckIdToRandomNumber[duckId] = _randomWords[0];
 
-        emit EggOpened(tokenId);
+        emit EggOpened(duckId);
     }
 
     ///@notice Allows the owner of an NFT(Portal) to claim an Duck provided it has been unlocked
-    ///@dev Will throw if the Portal(with identifier `_tokenid`) has not been opened(Unlocked) yet
-    ///@dev If the NFT(Portal) with identifier `_tokenId` is listed for sale on the baazaar while it is being unlocked, that listing is cancelled
-    ///@param _tokenId The identifier of NFT to claim an Duck from
+    ///@dev Will throw if the Portal(with identifier `_duckId`) has not been opened(Unlocked) yet
+    ///@dev If the NFT(Portal) with identifier `_duckId` is listed for sale on the baazaar while it is being unlocked, that listing is cancelled
+    ///@param _duckId The identifier of NFT to claim an Duck from
     ///@param _option The index of the Duck to claim(1-10)
     ///@param _stakeAmount Minimum amount of collateral tokens needed to be sent to the new Duck escrow contract
-    function claimDuck(uint256 _tokenId, address _owner, uint256 _option, uint256 _stakeAmount) internal {
+    function claimDuck(uint64 _duckId, address _owner, uint256 _option, uint256 _stakeAmount) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        DuckInfo storage duck = s.ducks[_tokenId];
+        DuckInfo storage duck = s.ducks[_duckId];
         console2.log("duck.status", uint256(duck.status));
         require(duck.status == DuckStatusType.OPEN_EGG, "DuckGameFacet: Egg not open");
         require(_option < 10, "DuckGameFacet: Only 10 duck options available");
-        uint256 randomNumber = s.eggIdToRandomNumber[_tokenId];
-        uint256 cycleId = s.ducks[_tokenId].cycleId;
+        uint256 randomNumber = s.duckIdToRandomNumber[_duckId];
+        uint16 cycleId = s.ducks[_duckId].cycleId;
 
         EggDuckTraitsDTO memory option = singleEggDuckTraits(cycleId, randomNumber, _option);
         duck.randomNumber = option.randomNumber;
@@ -66,7 +66,7 @@ library LibDuck {
         duck.interactionCount = 50;
         duck.hatchTime = uint40(block.timestamp);
         // assign characteristics
-        for (uint256 i; i < option.characteristics.length; i++) {
+        for (uint16 i; i < option.characteristics.length; i++) {
             duck.characteristics[uint16(i)] = option.characteristics[i];
         }
         // TODO : wip base statistics
@@ -79,45 +79,45 @@ library LibDuck {
 
         duck.status = DuckStatusType.DUCK;
         // TODO : wip events
-        // emit DuckClaimed(_tokenId);
+        // emit DuckClaimed(_duckId);
 
         address escrow = address(new CollateralEscrow(option.collateralType));
         duck.escrow = escrow;
 
         LibERC20.safeTransferFrom(option.collateralType, _owner, escrow, _stakeAmount);
         // TODO : Duck Marcketplace
-        // LibERC721Marketplace.cancelERC721Listing(address(this), _tokenId, _owner);
+        // LibERC721Marketplace.cancelERC721Listing(address(this), _duckId, _owner);
     }
 
     ///@notice Allows the owner of a NFT to set a name for it
     ///@dev only valid for claimed Ducks
     ///@dev Will throw if the name has been used for another claimed Duck
-    ///@param _tokenId the identifier if the NFT to name
+    ///@param _duckId the identifier if the NFT to name
     ///@param _name Preferred name to give the claimed Duck
-    function setDuckName(uint256 _tokenId, string calldata _name) internal {
+    function setDuckName(uint64 _duckId, string calldata _name) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        require(s.ducks[_tokenId].status == DuckStatusType.DUCK, "DuckGameFacet: Must claim Duck before setting name");
+        require(s.ducks[_duckId].status == DuckStatusType.DUCK, "DuckGameFacet: Must claim Duck before setting name");
         string memory lowerName = LibString.validateAndLowerName(_name);
-        string memory existingName = s.ducks[_tokenId].name;
+        string memory existingName = s.ducks[_duckId].name;
         if (bytes(existingName).length > 0) {
             delete s.duckNamesUsed[LibString.validateAndLowerName(existingName)];
         }
         require(!s.duckNamesUsed[lowerName], "DuckGameFacet: Duck name used already");
         s.duckNamesUsed[lowerName] = true;
-        s.ducks[_tokenId].name = _name;
+        s.ducks[_duckId].name = _name;
         // TODO : wip events
-        // emit SetDuckName(_tokenId, existingName, _name);
+        // emit SetDuckName(_duckId, existingName, _name);
     }
 
-    function interact(uint256 _tokenId) internal returns (bool) {
+    function interact(uint64 _duckId) internal returns (bool) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        uint256 lastInteracted = s.ducks[_tokenId].lastInteracted;
+        uint256 lastInteracted = s.ducks[_duckId].lastInteracted;
         // if interacted less than 12 hours ago
         if (block.timestamp < lastInteracted + 12 hours) {
             return false;
         }
 
-        uint256 interactionCount = s.ducks[_tokenId].interactionCount;
+        uint256 interactionCount = s.ducks[_duckId].interactionCount;
         uint256 interval = block.timestamp - lastInteracted;
         uint256 daysSinceInteraction = interval / 1 days;
         uint256 l_kinship;
@@ -131,10 +131,10 @@ library LibDuck {
             hateBonus = 2;
         }
         l_kinship += 1 + hateBonus;
-        s.ducks[_tokenId].interactionCount = l_kinship;
+        s.ducks[_duckId].interactionCount = l_kinship;
 
-        s.ducks[_tokenId].lastInteracted = uint40(block.timestamp);
-        emit DuckInteract(_tokenId, l_kinship);
+        s.ducks[_duckId].lastInteracted = uint40(block.timestamp);
+        emit DuckInteract(_duckId, l_kinship);
         return true;
     }
 
@@ -150,107 +150,107 @@ library LibDuck {
         LibERC20.safeTransferFrom(quackTokenAddress, _from, s.daoAddress, share);
     }
 
-    function internalTransferFrom(address _sender, address _from, address _to, uint256 _tokenId) internal {
+    function internalTransferFrom(address _sender, address _from, address _to, uint64 _duckId) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         require(_to != address(0), "DuckFacet: Can't transfer to 0 address");
         require(_from != address(0), "DuckFacet: _from can't be 0 address");
-        require(_from == s.ducks[_tokenId].owner, "DuckFacet: _from is not owner, transfer failed");
+        require(_from == s.ducks[_duckId].owner, "DuckFacet: _from is not owner, transfer failed");
         require(
-            _sender == _from || s.operators[_from][_sender] || _sender == s.approved[_tokenId],
+            _sender == _from || s.operators[_from][_sender] || _sender == s.approved[_duckId],
             "DuckFacet: Not owner or approved to transfer"
         );
-        transfer(_from, _to, _tokenId);
-        // LibERC721Marketplace.updateERC721Listing(address(this), _tokenId, _from);
+        transfer(_from, _to, _duckId);
+        // LibERC721Marketplace.updateERC721Listing(address(this), _duckId, _from);
     }
 
-    function transfer(address _from, address _to, uint256 _tokenId) internal {
+    function transfer(address _from, address _to, uint64 _duckId) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
 
         // remove
-        uint256 index = s.ownerDuckIdIndexes[_from][_tokenId];
-        uint256 lastIndex = s.ownerDuckIds[_from].length - 1;
+        uint64 index = s.ownerDuckIdIndexes[_from][_duckId];
+        uint64 lastIndex = uint64(s.ownerDuckIds[_from].length - 1);
         if (index != lastIndex) {
-            uint32 lastTokenId = s.ownerDuckIds[_from][lastIndex];
-            s.ownerDuckIds[_from][index] = lastTokenId;
-            s.ownerDuckIdIndexes[_from][lastTokenId] = index;
+            uint64 lastDuckId = s.ownerDuckIds[_from][lastIndex];
+            s.ownerDuckIds[_from][index] = lastDuckId;
+            s.ownerDuckIdIndexes[_from][lastDuckId] = index;
         }
         s.ownerDuckIds[_from].pop();
-        delete s.ownerDuckIdIndexes[_from][_tokenId];
-        if (s.approved[_tokenId] != address(0)) {
-            delete s.approved[_tokenId];
-            emit LibERC721.Approval(_from, address(0), _tokenId);
+        delete s.ownerDuckIdIndexes[_from][_duckId];
+        if (s.approved[_duckId] != address(0)) {
+            delete s.approved[_duckId];
+            emit LibERC721.Approval(_from, address(0), _duckId);
         }
         // add
-        s.ducks[_tokenId].owner = _to;
-        s.ownerDuckIdIndexes[_to][_tokenId] = s.ownerDuckIds[_to].length;
-        s.ownerDuckIds[_to].push(uint32(_tokenId));
-        emit LibERC721.Transfer(_from, _to, _tokenId);
+        s.ducks[_duckId].owner = _to;
+        s.ownerDuckIdIndexes[_to][_duckId] = uint64(s.ownerDuckIds[_to].length);
+        s.ownerDuckIds[_to].push(uint64(_duckId));
+        emit LibERC721.Transfer(_from, _to, _duckId);
     }
 
     // TODO : rework !!
     ///@notice Allow the owner of an NFT to spend skill points for it(basically to boost the numeric traits of that NFT)
     ///@dev only valid for claimed ducks
-    ///@param _tokenId The identifier of the NFT to spend the skill points on
+    ///@param _duckId The identifier of the NFT to spend the skill points on
     ///@param _values An array of four integers that represent the values of the skill points
-    function spendSkillPoints(uint256 _tokenId, int16[4] calldata _values) internal {
+    function spendSkillPoints(uint64 _duckId, int16[4] calldata _values) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
         //To test: Prevent underflow (is this ok?), see require below
         uint256 totalUsed;
         for (uint16 index; index < _values.length; index++) {
             totalUsed += LibMaths.abs(_values[index]);
 
-            s.ducks[_tokenId].characteristics[index] += _values[index];
+            s.ducks[_duckId].characteristics[index] += _values[index];
         }
         // handles underflow
-        require(availableSkillPoints(_tokenId) >= totalUsed, "DuckGameFacet: Not enough skill points");
+        require(availableSkillPoints(_duckId) >= totalUsed, "DuckGameFacet: Not enough skill points");
         //Increment used skill points
-        s.ducks[_tokenId].usedSkillPoints += totalUsed;
+        s.ducks[_duckId].usedSkillPoints += totalUsed;
         // TODO : wip events
-        // emit SpendSkillpoints(_tokenId, _values);
+        // emit SpendSkillpoints(_duckId, _values);
     }
 
     ///////////////////////////////////////////
     // MARK: Read functions
     ///////////////////////////////////////////
 
-    function getDuckInfo(uint256 _tokenId) internal view returns (DuckInfoDTO memory duckInfo_) {
+    function getDuckInfo(uint64 _duckId) internal view returns (DuckInfoDTO memory duckInfo_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        duckInfo_.tokenId = _tokenId;
-        duckInfo_.owner = s.ducks[_tokenId].owner;
-        duckInfo_.hatchTime = s.ducks[_tokenId].hatchTime;
-        duckInfo_.randomNumber = s.ducks[_tokenId].randomNumber;
-        duckInfo_.status = s.ducks[_tokenId].status;
-        duckInfo_.cycleId = s.ducks[_tokenId].cycleId;
+        duckInfo_.duckId = _duckId;
+        duckInfo_.owner = s.ducks[_duckId].owner;
+        duckInfo_.hatchTime = s.ducks[_duckId].hatchTime;
+        duckInfo_.randomNumber = s.ducks[_duckId].randomNumber;
+        duckInfo_.status = s.ducks[_duckId].status;
+        duckInfo_.cycleId = s.ducks[_duckId].cycleId;
         if (duckInfo_.status == DuckStatusType.DUCK) {
-            int16[] memory characteristics = getCharacteristicsArray(s.ducks[_tokenId]);
-            duckInfo_.name = s.ducks[_tokenId].name;
-            duckInfo_.equippedWearables = getEquippedWearablesArray(s.ducks[_tokenId]);
-            duckInfo_.equippedBadges = getEquippedBadgesArray(s.ducks[_tokenId]);
-            duckInfo_.collateral = s.ducks[_tokenId].collateralType;
-            duckInfo_.escrow = s.ducks[_tokenId].escrow;
+            int16[] memory characteristics = getCharacteristicsArray(s.ducks[_duckId]);
+            duckInfo_.name = s.ducks[_duckId].name;
+            duckInfo_.equippedWearables = getEquippedWearablesArray(s.ducks[_duckId]);
+            duckInfo_.equippedBadges = getEquippedBadgesArray(s.ducks[_duckId]);
+            duckInfo_.collateral = s.ducks[_duckId].collateralType;
+            duckInfo_.escrow = s.ducks[_duckId].escrow;
             duckInfo_.stakedAmount = IERC20(duckInfo_.collateral).balanceOf(duckInfo_.escrow);
-            duckInfo_.minimumStake = s.ducks[_tokenId].minimumStake;
-            duckInfo_.kinship = kinship(_tokenId);
-            duckInfo_.lastInteracted = s.ducks[_tokenId].lastInteracted;
-            duckInfo_.experience = s.ducks[_tokenId].experience;
-            duckInfo_.toNextLevel = getRequiredXP(s.ducks[_tokenId].level, duckInfo_.experience);
-            duckInfo_.level = s.ducks[_tokenId].level;
-            duckInfo_.usedSkillPoints = s.ducks[_tokenId].usedSkillPoints;
+            duckInfo_.minimumStake = s.ducks[_duckId].minimumStake;
+            duckInfo_.kinship = kinship(_duckId);
+            duckInfo_.lastInteracted = s.ducks[_duckId].lastInteracted;
+            duckInfo_.experience = s.ducks[_duckId].experience;
+            duckInfo_.toNextLevel = getRequiredXP(s.ducks[_duckId].level, duckInfo_.experience);
+            duckInfo_.level = s.ducks[_duckId].level;
+            duckInfo_.usedSkillPoints = s.ducks[_duckId].usedSkillPoints;
             duckInfo_.characteristics = characteristics;
-            duckInfo_.statistics = getStatisticsArray(s.ducks[_tokenId]);
+            duckInfo_.statistics = getStatisticsArray(s.ducks[_duckId]);
             duckInfo_.baseRarityScore = LibMaths.baseRarityScore(characteristics);
             (duckInfo_.modifiedCharacteristics, duckInfo_.modifiedRarityScore) =
-                modifiedCharacteristicsAndRarityScore(_tokenId);
-            duckInfo_.locked = s.ducks[_tokenId].locked;
+                modifiedCharacteristicsAndRarityScore(_duckId);
+            duckInfo_.locked = s.ducks[_duckId].locked;
             // TODO : wip add items
-            // duckInfo_.items = LibItems.itemBalancesOfTokenWithTypes(address(this), _tokenId);
+            // duckInfo_.items = LibItems.itemBalancesOfTokenWithTypes(address(this), _duckId);
         }
     }
 
-    function kinship(uint256 _tokenId) internal view returns (uint256 score_) {
+    function kinship(uint64 _duckId) internal view returns (uint256 score_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        DuckInfo storage duck = s.ducks[_tokenId];
+        DuckInfo storage duck = s.ducks[_duckId];
         uint256 lastInteracted = duck.lastInteracted;
         uint256 interactionCount = duck.interactionCount;
         uint256 interval = block.timestamp - lastInteracted;
@@ -264,13 +264,13 @@ library LibDuck {
 
     /**
      * @notice Adds XP to a Duck and updates its level accordingly.
-     * @param _tokenId The duckId to update.
+     * @param _duckId The duckId to update.
      * @param xp The amount of XP to add.
      */
-    function addXP(uint256 _tokenId, uint256 xp) internal {
+    function addXP(uint64 _duckId, uint256 xp) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        DuckInfo storage duck = s.ducks[_tokenId];
-        emit DuckXPAdded(_tokenId, duck.level, xp);
+        DuckInfo storage duck = s.ducks[_duckId];
+        emit DuckXPAdded(_duckId, duck.level, xp);
 
         // Continue adding XP and handling level-ups until either XP is exhausted or max level is reached
         while (xp > 0 && duck.level < s.MAX_LEVEL) {
@@ -281,7 +281,7 @@ library LibDuck {
                 xp -= remainingXP;
                 duck.level++;
                 duck.experience = 0;
-                emit DuckLevelUp(_tokenId, duck.level);
+                emit DuckLevelUp(_duckId, duck.level);
                 if (duck.level >= s.MAX_LEVEL) {
                     // Duck has reached max level; exit the loop immediately (save gas)
                     break;
@@ -311,16 +311,16 @@ library LibDuck {
     ///////////////////////////////////////////
 
     //Only valid for claimed Ducks
-    function modifiedCharacteristicsAndRarityScore(uint256 _tokenId)
+    function modifiedCharacteristicsAndRarityScore(uint64 _duckId)
         internal
         view
         returns (int16[] memory characteristics_, uint256 rarityScore_)
     {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        require(s.ducks[_tokenId].status == DuckStatusType.DUCK, "DuckFacet: Must be claimed");
-        characteristics_ = getDuckCharacteristics(_tokenId);
+        require(s.ducks[_duckId].status == DuckStatusType.DUCK, "DuckFacet: Must be claimed");
+        characteristics_ = getDuckCharacteristics(_duckId);
         // TODO : wip items / work on characteristics mapping directly
-        // DuckInfo storage duck = s.ducks[_tokenId];
+        // DuckInfo storage duck = s.ducks[_duckId];
         uint256 wearableBonus;
         // for (uint256 slot; slot < EQUIPPED_WEARABLE_SLOTS; slot++) {
         //     uint256 wearableId = duck.equippedWearables[slot];
@@ -338,17 +338,17 @@ library LibDuck {
         rarityScore_ = baseRarity + wearableBonus;
     }
 
-    function getDuckCharacteristics(uint256 _tokenId) internal view returns (int16[] memory characteristics_) {
+    function getDuckCharacteristics(uint64 _duckId) internal view returns (int16[] memory characteristics_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         //Check if trait boosts from consumables are still valid
-        int256 boostDecay = int256((block.timestamp - s.ducks[_tokenId].lastTemporaryBoost) / 24 hours);
+        int256 boostDecay = int256((block.timestamp - s.ducks[_duckId].lastTemporaryBoost) / 24 hours);
         uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
         characteristics_ = new int16[](characteristicsCount);
-        for (uint256 i; i < characteristicsCount; i++) {
+        for (uint16 i; i < characteristicsCount; i++) {
             // console2.log("i", i);
-            int256 number = s.ducks[_tokenId].characteristics[uint16(i)];
+            int256 number = s.ducks[_duckId].characteristics[uint16(i)];
             // console2.log("number", number);
-            int256 boost = s.ducks[_tokenId].temporaryCharacteristicsBoosts[uint16(i)];
+            int256 boost = s.ducks[_duckId].temporaryCharacteristicsBoosts[uint16(i)];
             // console2.log("boost", boost);
 
             if (boost > 0 && boost > boostDecay) {
@@ -360,15 +360,15 @@ library LibDuck {
         }
     }
 
-    function eggDuckTraits(uint256 _tokenId) internal view returns (EggDuckTraitsDTO[10] memory eggDuckTraits_) {
+    function eggDuckTraits(uint64 _duckId) internal view returns (EggDuckTraitsDTO[10] memory eggDuckTraits_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        require(s.ducks[_tokenId].status == DuckStatusType.OPEN_EGG, "DuckFacet: Egg not open");
+        require(s.ducks[_duckId].status == DuckStatusType.OPEN_EGG, "DuckFacet: Egg not open");
 
-        uint256 randomNumber = s.eggIdToRandomNumber[_tokenId];
+        uint256 randomNumber = s.duckIdToRandomNumber[_duckId];
 
-        uint256 cycleId = s.ducks[_tokenId].cycleId;
+        uint16 cycleId = s.ducks[_duckId].cycleId;
 
-        for (uint256 i; i < eggDuckTraits_.length; i++) {
+        for (uint16 i; i < eggDuckTraits_.length; i++) {
             EggDuckTraitsDTO memory single = singleEggDuckTraits(cycleId, randomNumber, i);
             eggDuckTraits_[i].randomNumber = single.randomNumber;
             eggDuckTraits_[i].collateralType = single.collateralType;
@@ -377,7 +377,7 @@ library LibDuck {
         }
     }
 
-    function singleEggDuckTraits(uint256 _cycleId, uint256 _randomNumber, uint256 _option)
+    function singleEggDuckTraits(uint16 _cycleId, uint256 _randomNumber, uint256 _option)
         internal
         view
         returns (EggDuckTraitsDTO memory singleEggDuckTraits_)
@@ -411,18 +411,18 @@ library LibDuck {
 
     ///@notice Query the available skill points that can be used for an NFT
     ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used
-    ///@param _tokenId The identifier of the NFT to query
-    ///@return   An unsigned integer which represents the available skill points of an NFT with identifier `_tokenId`
-    function availableSkillPoints(uint256 _tokenId) internal view returns (uint256) {
+    ///@param _duckId The identifier of the NFT to query
+    ///@return   An unsigned integer which represents the available skill points of an NFT with identifier `_duckId`
+    function availableSkillPoints(uint64 _duckId) internal view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         uint256 skillPoints =
-            LibDuck.calculateSkillPoints(_tokenId, s.ducks[_tokenId].level, s.ducks[_tokenId].hatchTime);
-        uint256 usedSkillPoints = s.ducks[_tokenId].usedSkillPoints;
+            LibDuck.calculateSkillPoints(s.ducks[_duckId].level, s.ducks[_duckId].hatchTime);
+        uint256 usedSkillPoints = s.ducks[_duckId].usedSkillPoints;
         require(skillPoints >= usedSkillPoints, "LibDuck: Used skill points is greater than skill points");
         return skillPoints - usedSkillPoints;
     }
 
-    function calculateSkillPoints(uint256 _tokenId, uint256 level, uint256 hatchTime) internal view returns (uint256) {
+    function calculateSkillPoints(uint256 level, uint256 hatchTime) internal view returns (uint256) {
         uint256 skillPoints = (level / 3);
         uint256 ageDifference = block.timestamp - hatchTime;
         return skillPoints + calculateSkillPointsByAge(ageDifference);
@@ -450,7 +450,7 @@ library LibDuck {
         view
         returns (int16[] memory characteristicsArray_)
     {
-        uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
+        uint16 characteristicsCount = uint16(type(DuckCharacteristicsType).max) + 1;
         characteristicsArray_ = new int16[](characteristicsCount);
 
         for (uint16 i = 0; i < characteristicsCount; i++) {
@@ -463,7 +463,7 @@ library LibDuck {
         view
         returns (int16[] memory modifiersArray_)
     {
-        uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
+        uint16 characteristicsCount = uint16(type(DuckCharacteristicsType).max) + 1;
         modifiersArray_ = new int16[](characteristicsCount);
 
         for (uint16 i = 0; i < characteristicsCount; i++) {
@@ -472,7 +472,7 @@ library LibDuck {
     }
 
     function getStatisticsArray(DuckInfo storage duckInfo) internal view returns (int16[] memory statisticsArray_) {
-        uint256 statisticsCount = uint256(type(DuckStatisticsType).max) + 1;
+        uint16 statisticsCount = uint16(type(DuckStatisticsType).max) + 1;
         statisticsArray_ = new int16[](statisticsCount);
 
         for (uint16 i = 0; i < statisticsCount; i++) {

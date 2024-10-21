@@ -122,11 +122,11 @@ contract ItemFacet is AccessControl {
 
     ///@notice Query the current wearables equipped for an NFT
     ///@dev only valid for claimed ducks
-    ///@param _tokenId Identifier of the NFT to query
+    ///@param _duckId Identifier of the NFT to query
     ///@return wearableIds_ An array containing the Identifiers of the wearable items currently equipped for the NFT
-    function equippedWearables(uint256 _tokenId) external view returns (uint256[] memory wearableIds_) {
+    function equippedWearables(uint64 _duckId) external view returns (uint256[] memory wearableIds_) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        DuckInfo storage duck = s.ducks[_tokenId];
+        DuckInfo storage duck = s.ducks[_duckId];
         uint16 wearbleSlotCount = uint16(type(DuckWearableSlot).max) + 1;
         wearableIds_ = new uint256[](wearbleSlotCount);
         for (uint16 i; i < wearbleSlotCount; i++) {
@@ -174,28 +174,28 @@ contract ItemFacet is AccessControl {
     ///@dev Only valid for claimed ducks
     ///@dev A zero value will unequip that slot and a non-zero value will equip that slot with the wearable whose identifier is provided
     ///@dev A wearable cannot be equipped in the wrong slot
-    ///@param _tokenId The identifier of the duck to make changes to
+    ///@param _duckId The identifier of the duck to make changes to
     ///@param _wearablesToEquip An array containing the identifiers of the wearables to equip
     function equipWearables(
-        uint256 _tokenId,
+        uint64 _duckId,
         uint16[] calldata _wearablesToEquip
-    ) isDuckOwner(_tokenId) onlyUnlocked(_tokenId) external {
-        LibItems._equipWearables(_msgSender(), _tokenId, _wearablesToEquip);
+    ) isDuckOwner(_duckId) onlyUnlocked(_duckId) external {
+        LibItems._equipWearables(_msgSender(), _duckId, _wearablesToEquip);
     }
 
 
     ///@notice Allow the owner of an NFT to use multiple consumable items for his duck
     ///@dev Only valid for claimed ducks
     ///@dev Consumables can be used to boost kinship/XP of an duck
-    ///@param _tokenId Identtifier of duck to use the consumables on
+    ///@param _duckId Identtifier of duck to use the consumables on
     ///@param _itemIds An array containing the identifiers of the items/consumables to use
     ///@param _quantities An array containing the quantity of each consumable to use
     function useConsumables(
-        uint256 _tokenId,
+        uint64 _duckId,
         uint256[] calldata _itemIds,
         uint256[] calldata _quantities
-    ) external isDuckOwner(_tokenId) {
-        require(LibAppStorage.diamondStorage().ducks[_tokenId].status == DuckStatusType.DUCK, "LibDuck: Only valid for Hatched Duck");
-        LibItems._useConsumables(_msgSender(), _tokenId, _itemIds, _quantities);
+    ) external isDuckOwner(_duckId) {
+        require(LibAppStorage.diamondStorage().ducks[_duckId].status == DuckStatusType.DUCK, "LibDuck: Only valid for Hatched Duck");
+        LibItems._useConsumables(_msgSender(), _duckId, _itemIds, _quantities);
     }
 }

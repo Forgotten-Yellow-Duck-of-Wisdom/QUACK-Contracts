@@ -21,7 +21,7 @@ abstract contract AccessControl is MetaContext {
         _;
     }
 
-    modifier isDuckOwner(uint256 _tokenId) {
+    modifier isDuckOwner(uint64 _tokenId) {
         require(
             _msgSender() == LibAppStorage.diamondStorage().ducks[_tokenId].owner,
             "LibApAccessControl: Only Duck owner can call this function"
@@ -29,7 +29,7 @@ abstract contract AccessControl is MetaContext {
         _;
     }
 
-    modifier onlyUnlocked(uint256 _tokenId) {
+    modifier onlyUnlocked(uint64 _tokenId) {
         require(
             LibAppStorage.diamondStorage().ducks[_tokenId].locked == false,
             "LibAppStorage: Only callable on unlocked Duck"
@@ -37,7 +37,7 @@ abstract contract AccessControl is MetaContext {
         _;
     }
 
-    modifier onlyLocked(uint256 _tokenId) {
+    modifier onlyLocked(uint64 _tokenId) {
         require(
             LibAppStorage.diamondStorage().ducks[_tokenId].locked == true, "LibAppStorage: Only callable on locked Duck"
         );
