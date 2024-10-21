@@ -21,9 +21,17 @@ contract TestDuck is TestBaseContract {
         assertEq(cycle.cycleMaxSize, _cycleMaxSize, "util_createCycle: Invalid Cycle Max Size");
         assertEq(cycle.eggsPrice, _eggPrice, "util_createCycle: Invalid Egg Price");
         assertEq(cycle.totalCount, 0, "util_createCycle: Invalid Total Count");
-        assertEq(cycle.allowedBodyColorItemIds.length, _bodyColorItemIds.length, "util_createCycle: Invalid Allowed Body Color Item Id");
+        assertEq(
+            cycle.allowedBodyColorItemIds.length,
+            _bodyColorItemIds.length,
+            "util_createCycle: Invalid Allowed Body Color Item Id"
+        );
         for (uint256 i; i < _bodyColorItemIds.length; i++) {
-            assertEq(cycle.allowedBodyColorItemIds[i], _bodyColorItemIds[i], "util_createCycle: Invalid Allowed Body Color Item Id");
+            assertEq(
+                cycle.allowedBodyColorItemIds[i],
+                _bodyColorItemIds[i],
+                "util_createCycle: Invalid Allowed Body Color Item Id"
+            );
         }
     }
 
@@ -116,8 +124,11 @@ contract TestDuck is TestBaseContract {
         uint64[] memory ids = new uint64[](1);
         ids[0] = 0;
         diamond.openEggs{value: vrfPrice}(ids);
+        // repick 2 times to get the last random duck
+        diamond.repickEgg(0);
+        diamond.repickEgg(0);
         uint256 minStake = 1;
-        uint256 chosenDuck = 1;
+        uint256 chosenDuck = 9;
         quackToken.approve(address(diamond), minStake);
         diamond.claimDuck(ids[0], chosenDuck, minStake);
 

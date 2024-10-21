@@ -55,7 +55,10 @@ library LibDuck {
         DuckInfo storage duck = s.ducks[_duckId];
         console2.log("duck.status", uint256(duck.status));
         require(duck.status == DuckStatusType.OPEN_EGG, "DuckGameFacet: Egg not open");
-        require(_option >= s.eggRepickOptions[_duckId] && _option <= (s.eggRepickOptions[_duckId] + 3), "DuckGameFacet: Invalid option");
+        require(
+            _option >= (s.eggRepickOptions[_duckId] + 1) && _option <= (s.eggRepickOptions[_duckId] + 3),
+            "DuckGameFacet: Invalid option"
+        );
         uint256 randomNumber = s.duckIdToRandomNumber[_duckId];
         uint16 cycleId = s.ducks[_duckId].cycleId;
 
@@ -66,15 +69,18 @@ library LibDuck {
         duck.lastInteracted = uint40(block.timestamp - 12 hours);
         duck.interactionCount = 50;
         duck.hatchTime = uint40(block.timestamp);
+        duck.satiationTime = uint40(block.timestamp); // instant food possible
         // assign characteristics
         for (uint16 i; i < option.characteristics.length; i++) {
             duck.characteristics[uint16(i)] = option.characteristics[i];
         }
         // TODO : wip base statistics
         // // assign statistics
-        // for (uint256 i; i < option.statistics.length; i++) {
-        //     EnumerableMap.set(duck.statistics, i, option.statistics[i]);
-        // }
+        for (uint16 i; i < uint16(type(DuckStatisticsType).max); i++) {
+            uint16 maxStat = option.statistics[i];
+            duck.maxStatistics[i] = maxStat;
+            duck.statistics[i] = maxStat;
+        }
 
         require(_stakeAmount >= option.minimumStake, "DuckGameFacet: _stakeAmount less than minimum stake");
 
@@ -376,6 +382,7 @@ library LibDuck {
             eggDuckTraits_[i].collateralType = single.collateralType;
             eggDuckTraits_[i].minimumStake = single.minimumStake;
             eggDuckTraits_[i].characteristics = single.characteristics;
+            eggDuckTraits_[i].statistics = single.statistics;
         }
     }
 
@@ -392,7 +399,10 @@ library LibDuck {
             s.cycleCollateralTypes[_cycleId][randomNumberN % s.cycleCollateralTypes[_cycleId].length];
         singleEggDuckTraits_.characteristics =
             LibMaths.calculateCharacteristics(randomNumberN, s.collateralTypeInfo[collateralType], _cycleId);
+            singleEggDuckTraits_.statistics =
+            LibMaths.calculateMaxStatistics(randomNumberN, s.collateralTypeInfo[collateralType], singleEggDuckTraits_.characteristics);
         singleEggDuckTraits_.collateralType = collateralType;
+        singleEggDuckTraits_.bodyColorItemId = s.cycles[_cycleId].allowedBodyColorItemIds[randomNumberN % s.cycles[_cycleId].allowedBodyColors.length];
 
         // TODO : wip dynamic collateral price
         // CollateralTypeInfo memory collateralInfo = s.collateralTypeInfo[collateralType];
@@ -417,8 +427,7 @@ library LibDuck {
     ///@return   An unsigned integer which represents the available skill points of an NFT with identifier `_duckId`
     function availableSkillPoints(uint64 _duckId) internal view returns (uint256) {
         AppStorage storage s = LibAppStorage.diamondStorage();
-        uint256 skillPoints =
-            LibDuck.calculateSkillPoints(s.ducks[_duckId].level, s.ducks[_duckId].hatchTime);
+        uint256 skillPoints = LibDuck.calculateSkillPoints(s.ducks[_duckId].level, s.ducks[_duckId].hatchTime);
         uint256 usedSkillPoints = s.ducks[_duckId].usedSkillPoints;
         require(skillPoints >= usedSkillPoints, "LibDuck: Used skill points is greater than skill points");
         return skillPoints - usedSkillPoints;
@@ -473,9 +482,9 @@ library LibDuck {
         }
     }
 
-    function getStatisticsArray(DuckInfo storage duckInfo) internal view returns (int16[] memory statisticsArray_) {
+    function getStatisticsArray(DuckInfo storage duckInfo) internal view returns (uint16[] memory statisticsArray_) {
         uint16 statisticsCount = uint16(type(DuckStatisticsType).max) + 1;
-        statisticsArray_ = new int16[](statisticsCount);
+        statisticsArray_ = new uint16[](statisticsCount);
 
         for (uint16 i = 0; i < statisticsCount; i++) {
             statisticsArray_[i] = duckInfo.statistics[i];
@@ -497,11 +506,7 @@ library LibDuck {
         }
     }
 
-    function getEquippedBadgesArray(DuckInfo storage duckInfo)
-        internal
-        view
-        returns (uint256[] memory badgesArray_)
-    {
+    function getEquippedBadgesArray(DuckInfo storage duckInfo) internal view returns (uint256[] memory badgesArray_) {
         uint256 badgesCount = uint256(type(DuckBadgeSlot).max) + 1;
 
         badgesArray_ = new uint256[](badgesCount);
@@ -509,5 +514,5 @@ library LibDuck {
         for (uint16 i = 0; i < badgesCount; i++) {
             badgesArray_[i] = duckInfo.equippedBadges[i];
         }
-            }
+    }
 }

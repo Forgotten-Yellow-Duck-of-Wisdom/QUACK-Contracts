@@ -104,11 +104,7 @@ contract DuckGameFacet is AccessControl {
     ///@dev Will throw if the name has been used for another claimed Duck
     ///@param _duckId the identifier if the NFT to name
     ///@param _name Preferred name to give the claimed Duck
-    function setDuckName(uint64 _duckId, string calldata _name)
-        external
-        onlyUnlocked(_duckId)
-        isDuckOwner(_duckId)
-    {
+    function setDuckName(uint64 _duckId, string calldata _name) external onlyUnlocked(_duckId) isDuckOwner(_duckId) {
         LibDuck.setDuckName(_duckId, _name);
     }
 

@@ -24,7 +24,7 @@ forge script scripts/createFirstCycle.s.sol:CreateFirstCycle --broadcast -vvvv
 - [ ] Add elo score for ranking games 
 - [ ] add random skin per cycle at egg hatch
 - [ ] add a mapping itemId => itemManagerAddress, allowing periphery to mint specific items
+- [ ] todo calculateMaxStatistics()
 
-- [ ] uint32 ou 64 pour le duckId ?
 ## License
 MIT - see [LICSENSE.md](LICENSE.md)

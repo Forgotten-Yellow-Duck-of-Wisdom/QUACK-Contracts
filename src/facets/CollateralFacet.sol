@@ -106,6 +106,7 @@ contract CollateralFacet is AccessControl {
      * @custom:dev This function accesses the `collateralTypes` array from the AppStorage,
      * providing a list of all collaterals that are available in the protocol regardless of cycle.
      */
+
     function getAllCyclesCollateralsTypesAddresses() external view returns (address[] memory) {
         return LibAppStorage.diamondStorage().collateralTypes;
     }
@@ -166,11 +167,7 @@ contract CollateralFacet is AccessControl {
      * It transfers the specified collateral tokens from the Duck's escrow contract back to the sender.
      * Ensures that the remaining stake does not fall below the predefined minimum stake.
      */
-    function decreaseStake(uint64 _duckId, uint256 _reduceAmount)
-        external
-        onlyUnlocked(_duckId)
-        isDuckOwner(_duckId)
-    {
+    function decreaseStake(uint64 _duckId, uint256 _reduceAmount) external onlyUnlocked(_duckId) isDuckOwner(_duckId) {
         AppStorage storage s = LibAppStorage.diamondStorage();
         address escrow = s.ducks[_duckId].escrow;
         require(escrow != address(0), "CollateralFacet: Does not have an escrow");

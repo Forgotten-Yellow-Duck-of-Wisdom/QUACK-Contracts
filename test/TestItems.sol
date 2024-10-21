@@ -190,26 +190,26 @@
 
 //     // function test_createItemType() public {
 //     //     util_createItemType(
-//     //         "Green", 
-//     //         "Body Color - Green", 
-//     //         account0, 
-//     //         quackModifiers, 
-//     //         quackModifiers, 
-//     //         quackModifiers, 
-//     //         quackModifiers, 
-//     //         0, 
-//     //         0, 
-//     //         0, 
-//     //         0, 
-//     //         0, 
-//     //         false, 
-//     //         0, 
-//     //         true, 
-//     //         0, 
-//     //         0, 
+//     //         "Green",
+//     //         "Body Color - Green",
+//     //         account0,
+//     //         quackModifiers,
+//     //         quackModifiers,
+//     //         quackModifiers,
+//     //         quackModifiers,
+//     //         0,
+//     //         0,
+//     //         0,
+//     //         0,
+//     //         0,
+//     //         false,
+//     //         0,
+//     //         true,
+//     //         0,
+//     //         0,
 //     //         0
 //     //     );
-//     // }   
+//     // }
 
 //     function test_buyItem() public {
 
@@ -217,7 +217,7 @@
 
 //     // function test_consumeItem() public {
 
-//     // }   
+//     // }
 
 //     // function test_equipWearable() public {
 

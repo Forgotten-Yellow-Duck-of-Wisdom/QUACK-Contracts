@@ -9,9 +9,11 @@ import {AccessControl} from "../shared/AccessControl.sol";
 import {LibDuck} from "./LibDuck.sol";
 import {LibERC1155} from "./LibERC1155.sol";
 import {LibMaths} from "./LibMaths.sol";
+
 library LibItems {
     event EquipWearables(uint64 _duckId, uint16[] _equippedWearables, uint16[] _wearablesToEquip);
     event UseConsumables(uint64 _duckId, uint256[] _itemIds, uint256[] _quantities);
+
     function itemBalancesOfTokenWithTypes(address _tokenContract, uint256 _tokenId)
         internal
         view
@@ -97,8 +99,7 @@ library LibItems {
         }
     }
 
-
-    // @dev old 
+    // @dev old
     // function _equipWearables(
     //     address _owner,
     //     uint256 _tokenId,
@@ -115,7 +116,6 @@ library LibItems {
     //     // TODO : wip events
     //     // emit LibItemsEvents.EquipWearables(_tokenId, duck.equippedWearables, _wearablesToEquip);
     //     // emit LibItemsEvents.EquipDelegatedWearables(_tokenId, duckDepositInfo.equippedDepositIds, _depositIdsToEquip);
-
 
     //     for (uint256 slot; slot < EQUIPPED_WEARABLE_SLOTS; slot++) {
     //         uint256 toEquipId = _wearablesToEquip[slot];
@@ -199,11 +199,7 @@ library LibItems {
     //     LibDuck.interact(_tokenId);
 
     // }
-    function _equipWearables(
-        address _owner,
-        uint64 _duckId,
-        uint16[] calldata _wearablesToEquip
-    ) internal {
+    function _equipWearables(address _owner, uint64 _duckId, uint16[] calldata _wearablesToEquip) internal {
         uint16 wearableSlotsTotal = uint16(type(DuckWearableSlot).max) + 1;
         require(_wearablesToEquip.length == wearableSlotsTotal, "ItemsFacet: Invalid wearables length");
         AppStorage storage s = LibAppStorage.diamondStorage();
@@ -218,7 +214,6 @@ library LibItems {
             uint256 toEquipId = _wearablesToEquip[slot];
             uint256 existingEquippedWearableId = duck.equippedWearables[slot];
 
-
             /// TODO : is necessary ?
             // To prevent the function `removeFromParent` to revert, it's necessary first to unequip this Wearable (delete from storage slot)
             // This is an edge case introduced by delegated Wearables, since users can now equip and unequip Wearables of same tokenId (but different depositId)
@@ -227,19 +222,21 @@ library LibItems {
 
             //Handle unequipping wearable case
             if (existingEquippedWearableId != 0 && s.itemTypes[existingEquippedWearableId].canBeTransferred) {
-                    // remove wearable from Duck and transfer item to owner
-                    LibItems.removeFromParent(address(this), _duckId, existingEquippedWearableId, 1);
-                    LibItems.addToOwner(_owner, existingEquippedWearableId, 1);
-                    // TODO : wip emit event
-                    // IEventHandlerFacet(s.wearableDiamond).emitTransferSingleEvent(_owner, address(this), _owner, existingEquippedWearableId, 1);
-                    emit LibERC1155.TransferFromParent(address(this), _duckId, existingEquippedWearableId, 1);
+                // remove wearable from Duck and transfer item to owner
+                LibItems.removeFromParent(address(this), _duckId, existingEquippedWearableId, 1);
+                LibItems.addToOwner(_owner, existingEquippedWearableId, 1);
+                // TODO : wip emit event
+                // IEventHandlerFacet(s.wearableDiamond).emitTransferSingleEvent(_owner, address(this), _owner, existingEquippedWearableId, 1);
+                emit LibERC1155.TransferFromParent(address(this), _duckId, existingEquippedWearableId, 1);
             }
 
             //Handle equipping wearables case
             if (toEquipId != 0) {
                 ItemType storage itemType = s.itemTypes[toEquipId];
                 require(duck.level >= itemType.minLevel, "ItemsFacet: Duck level lower than minLevel");
-                require(itemType.category == uint8(ItemTypeCategory.WEARABLE), "ItemsFacet: Only wearables can be equippped");
+                require(
+                    itemType.category == uint8(ItemTypeCategory.WEARABLE), "ItemsFacet: Only wearables can be equippped"
+                );
                 require(itemType.slotPositions[slot] == true, "ItemsFacet: Wearable can't be equipped in slot");
                 {
                     bool canBeEquipped;
@@ -261,22 +258,22 @@ library LibItems {
                 // Wearable is equipped one by one, even if hands has the same id (but different depositId)
                 duck.equippedWearables[slot] = uint16(toEquipId);
 
-                    // We need to check if wearable is already in the inventory, if it is, we don't transfer it from the owner
-                    uint256 maxBalance = slot == uint16(DuckWearableSlot.HAND_LEFT) || slot == uint16(DuckWearableSlot.HAND_RIGHT) ? 2 : 1;
-                    if(s.nftItemBalances[address(this)][_duckId][toEquipId] >= maxBalance) continue;
-                    require(s.ownerItemBalances[_owner][toEquipId] >= 1, "ItemsFacet: Wearable isn't in inventory");
+                // We need to check if wearable is already in the inventory, if it is, we don't transfer it from the owner
+                uint256 maxBalance =
+                    slot == uint16(DuckWearableSlot.HAND_LEFT) || slot == uint16(DuckWearableSlot.HAND_RIGHT) ? 2 : 1;
+                if (s.nftItemBalances[address(this)][_duckId][toEquipId] >= maxBalance) continue;
+                require(s.ownerItemBalances[_owner][toEquipId] >= 1, "ItemsFacet: Wearable isn't in inventory");
 
-                    //Transfer to Duck
-                    LibItems.removeFromOwner(_owner, toEquipId, 1);
-                    LibItems.addToParent(address(this), _duckId, toEquipId, 1);
-                    emit LibERC1155.TransferToParent(address(this), _duckId, toEquipId, 1);
-                    // TODO : wip emit event
-                    // IEventHandlerFacet(s.wearableDiamond).emitTransferSingleEvent(_owner, _owner, address(this), toEquipId, 1);
-                    // LibERC1155Marketplace.updateERC1155Listing(address(this), toEquipId, _owner);
+                //Transfer to Duck
+                LibItems.removeFromOwner(_owner, toEquipId, 1);
+                LibItems.addToParent(address(this), _duckId, toEquipId, 1);
+                emit LibERC1155.TransferToParent(address(this), _duckId, toEquipId, 1);
+                // TODO : wip emit event
+                // IEventHandlerFacet(s.wearableDiamond).emitTransferSingleEvent(_owner, _owner, address(this), toEquipId, 1);
+                // LibERC1155Marketplace.updateERC1155Listing(address(this), toEquipId, _owner);
             }
         }
         LibDuck.interact(_duckId);
-
     }
 
     function checkWearableIsEquipped(uint64 _fromTokenId, uint256 _id) internal view {
@@ -289,7 +286,7 @@ library LibItems {
         }
     }
 
-        ///@notice Allow the owner of an NFT to use multiple consumable items for his duck
+    ///@notice Allow the owner of an NFT to use multiple consumable items for his duck
     ///@dev Only valid for claimed ducks
     ///@dev Consumables can be used to boost kinship/XP of an duck
     ///@param _duckId Identtifier of duck to use the consumables on
@@ -315,7 +312,8 @@ library LibItems {
 
             //Increase kinship
             if (itemType.kinshipBonus > 0) {
-                uint256 kinship = (uint256(int256(itemType.kinshipBonus)) * quantity) + s.ducks[_duckId].interactionCount;
+                uint256 kinship =
+                    (uint256(int256(itemType.kinshipBonus)) * quantity) + s.ducks[_duckId].interactionCount;
                 s.ducks[_duckId].interactionCount = kinship;
             } else if (itemType.kinshipBonus < 0) {
                 uint256 kinshipBonus = LibMaths.abs(itemType.kinshipBonus) * quantity;
@@ -346,10 +344,14 @@ library LibItems {
             /// @dev : new code, need to be tested
             {
                 // prevent stack too deep error with braces here
-                //Increase Statistics 
+                //Increase Statistics
                 for (uint16 j; j < (uint16(type(DuckStatisticsType).max) + 1); j++) {
-                    if (itemType.statisticsModifiers[j] != 0) {
-                        s.ducks[_duckId].statistics[j] += itemType.statisticsModifiers[j];
+                    if (itemType.statisticsModifiers[j] > 0) {
+                        s.ducks[_duckId].statistics[j] += uint16(itemType.statisticsModifiers[j]);
+                    } else if (itemType.statisticsModifiers[j] < 0) {
+                        uint16 absModifier = uint16(LibMaths.abs(int256(itemType.statisticsModifiers[j])));
+                        require(s.ducks[_duckId].statistics[j] >= absModifier, "ItemsFacet: Statistics underflow"); // TODO:  reached 0 ?
+                        s.ducks[_duckId].statistics[j] -= absModifier;
                     }
                 }
             }
@@ -366,8 +368,7 @@ library LibItems {
             // LibERC1155Marketplace.updateERC1155Listing(address(this), itemId, _owner);
         }
         emit UseConsumables(_duckId, _itemIds, _quantities);
-    		// TODO: wip event
+        // TODO: wip event
         // IEventHandlerFacet(s.wearableDiamond).emitTransferBatchEvent(_owner, _owner, address(0), _itemIds, _quantities);
     }
-
 }

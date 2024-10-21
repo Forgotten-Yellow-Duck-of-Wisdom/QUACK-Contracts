@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.21;
 
-import {DuckCharacteristicsType} from "../shared/Structs_Ducks.sol";
+import {DuckCharacteristicsType, DuckStatisticsType} from "../shared/Structs_Ducks.sol";
 import {CollateralTypeInfo} from "../shared/Structs.sol";
 import {console2} from "forge-std/console2.sol";
 
@@ -19,7 +19,6 @@ library LibMaths {
         uint256 _cycleId
     ) internal view returns (int16[] memory characteristics_) {
         uint256 characteristicsCount = uint256(type(DuckCharacteristicsType).max) + 1;
-        console2.log("calculateCharacteristics", characteristicsCount);
         // Initialize the array with the required length
         characteristics_ = new int16[](characteristicsCount);
         if (_cycleId == 1) {
@@ -46,6 +45,23 @@ library LibMaths {
             }
         }
         return characteristics_;
+    }
+
+    function calculateMaxStatistics(uint256 _randomNumber, CollateralTypeInfo storage _collateralType, int16[] memory _characteristics, uint16[] memory _charactisticsBoosts) internal view returns (uint16[] memory statistics_) {
+        uint256 statisticsCount = uint256(type(DuckStatisticsType).max) + 1;
+        statistics_ = new uint16[](statisticsCount);
+        for (uint256 i; i < statisticsCount; i++) {
+            // uint256 value = uint8(uint256(_randomNumber >> (i * 8)));
+            // if (value > 99) {
+            //     value /= 2;
+            //     if (value > 99) {
+            //         value = uint256(keccak256(abi.encodePacked(_randomNumber, i))) % 100;
+            //     }
+            // }
+            // statistics_[i] = int16(int256(value)) + _collateralType.modifiers[uint16(i)] + _charactisticsBoosts[i];
+            statistics_[i] = 100;
+        }
+        return statistics_;
     }
 
     //Calculates the base rarity score, including collateral modifier

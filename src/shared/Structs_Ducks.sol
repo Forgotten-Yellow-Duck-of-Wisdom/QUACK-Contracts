@@ -23,7 +23,7 @@ enum DuckCharacteristicsType {
 
 enum DuckStatisticsType {
     HEALTH,
-    MANA, 
+    MANA,
     SPECIAL,
     ENERGY,
     FOOD,
@@ -64,8 +64,8 @@ struct Cycle {
     uint256 eggsPrice;
     uint24 totalCount;
     uint256[] allowedBodyColorItemIds;
-    // uint256[] allowedWearableItemIds;
 }
+// uint256[] allowedWearableItemIds;
 
 struct DuckInfo {
     // owner address
@@ -88,13 +88,13 @@ struct DuckInfo {
     //The last time this Duck was interacted with
     uint40 lastInteracted;
     uint40 lastTemporaryBoost;
+    uint40 satiationTime; // how many time before need to eat
     //The minimum amount of collateral that must be staked. Set upon creation.
     uint256 minimumStake;
     // vrf
     uint256 bodyColorItemId;
     DuckStatusType status; // 0 == egg, 1 == VRF_PENDING, 2 == open egg, 3 == Duck
     bool locked;
-
     //The currently equipped wearables of the Duck
     mapping(uint16 => uint256) equippedWearables;
     //The currently equipped badges of the Duck
@@ -104,9 +104,10 @@ struct DuckInfo {
     // DuckCharacteristicsType => value
     mapping(uint16 => int16) temporaryCharacteristicsBoosts;
     // DuckStatisticsType => value
-    mapping(uint16 => int16) statistics;
+    mapping(uint16 => uint16) statistics;
     // DuckStatisticsType => value
-    mapping(uint16 => int16) temporaryStatisticsBoosts;
+    mapping(uint16 => uint16) maxStatistics;
+    mapping(uint16 => int16) traits;
 }
 
 /////////////////////////////////
@@ -115,8 +116,11 @@ struct DuckInfo {
 struct EggDuckTraitsDTO {
     uint256 randomNumber;
     int16[] characteristics;
+    uint16[] statistics;
+    // int16[] traits;
     address collateralType;
     uint256 minimumStake;
+    uint256 bodyColorItemId;
 }
 
 struct DuckInfoDTO {
@@ -129,8 +133,9 @@ struct DuckInfoDTO {
     DuckStatusType status;
     int16[] characteristics;
     int16[] modifiedCharacteristics;
-    int16[] statistics;
-    int16[] modifiedStatistics;
+    uint16[] statistics;
+    uint16[] maxStatistics;
+    // int16[] traits;
     uint256[] equippedWearables;
     uint256[] equippedBadges;
     address collateral;

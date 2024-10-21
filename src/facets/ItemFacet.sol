@@ -176,13 +176,13 @@ contract ItemFacet is AccessControl {
     ///@dev A wearable cannot be equipped in the wrong slot
     ///@param _duckId The identifier of the duck to make changes to
     ///@param _wearablesToEquip An array containing the identifiers of the wearables to equip
-    function equipWearables(
-        uint64 _duckId,
-        uint16[] calldata _wearablesToEquip
-    ) isDuckOwner(_duckId) onlyUnlocked(_duckId) external {
+    function equipWearables(uint64 _duckId, uint16[] calldata _wearablesToEquip)
+        external
+        isDuckOwner(_duckId)
+        onlyUnlocked(_duckId)
+    {
         LibItems._equipWearables(_msgSender(), _duckId, _wearablesToEquip);
     }
-
 
     ///@notice Allow the owner of an NFT to use multiple consumable items for his duck
     ///@dev Only valid for claimed ducks
@@ -190,12 +190,14 @@ contract ItemFacet is AccessControl {
     ///@param _duckId Identtifier of duck to use the consumables on
     ///@param _itemIds An array containing the identifiers of the items/consumables to use
     ///@param _quantities An array containing the quantity of each consumable to use
-    function useConsumables(
-        uint64 _duckId,
-        uint256[] calldata _itemIds,
-        uint256[] calldata _quantities
-    ) external isDuckOwner(_duckId) {
-        require(LibAppStorage.diamondStorage().ducks[_duckId].status == DuckStatusType.DUCK, "LibDuck: Only valid for Hatched Duck");
+    function useConsumables(uint64 _duckId, uint256[] calldata _itemIds, uint256[] calldata _quantities)
+        external
+        isDuckOwner(_duckId)
+    {
+        require(
+            LibAppStorage.diamondStorage().ducks[_duckId].status == DuckStatusType.DUCK,
+            "LibDuck: Only valid for Hatched Duck"
+        );
         LibItems._useConsumables(_msgSender(), _duckId, _itemIds, _quantities);
     }
 }
