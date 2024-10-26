@@ -14,14 +14,14 @@
 //     // Utils
 //     ///////////////////////////////////////////////////////////////////////////////////
 
-//     function util_createCycle(uint24 _cycleMaxSize, uint256 _eggPrice, uint256 _bodyColorItemId) internal {
-//         uint256 createdId = diamond.createCycle(_cycleMaxSize, _eggPrice, _bodyColorItemId);
+//     function util_createCycle(uint24 _cycleMaxSize, uint256 _eggPrice, uint256 _bodyColorId) internal {
+//         uint256 createdId = diamond.createCycle(_cycleMaxSize, _eggPrice, _bodyColorId);
 //         (cycleId, cycle) = diamond.currentCycle();
 //         assertEq(createdId, cycleId, "util_createCycle: Invalid Cycle Id");
 //         assertEq(cycle.cycleMaxSize, _cycleMaxSize, "util_createCycle: Invalid Cycle Max Size");
 //         assertEq(cycle.eggsPrice, _eggPrice, "util_createCycle: Invalid Egg Price");
 //         assertEq(cycle.totalCount, 0, "util_createCycle: Invalid Total Count");
-//         assertEq(cycle.bodyColorItemId, _bodyColorItemId, "util_createCycle: Invalid Body Color Item Id");
+//         assertEq(cycle.bodyColorId, _bodyColorId, "util_createCycle: Invalid Body Color Item Id");
 //     }
 
 //     ///////////////////////////////////////////////////////////////////////////////////

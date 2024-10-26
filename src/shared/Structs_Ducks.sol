@@ -63,7 +63,7 @@ struct Cycle {
     uint256 cycleMaxSize;
     uint256 eggsPrice;
     uint24 totalCount;
-    uint256[] allowedBodyColorItemIds;
+    uint256[] allowedBodyColorIds;
 }
 // uint256[] allowedWearableItemIds;
 
@@ -92,7 +92,7 @@ struct DuckInfo {
     //The minimum amount of collateral that must be staked. Set upon creation.
     uint256 minimumStake;
     // vrf
-    uint256 bodyColorItemId;
+    uint256 bodyColorId;
     DuckStatusType status; // 0 == egg, 1 == VRF_PENDING, 2 == open egg, 3 == Duck
     bool locked;
     //The currently equipped wearables of the Duck
@@ -120,7 +120,7 @@ struct EggDuckTraitsDTO {
     // int16[] traits;
     address collateralType;
     uint256 minimumStake;
-    uint256 bodyColorItemId;
+    uint256 bodyColorId;
 }
 
 struct DuckInfoDTO {
@@ -128,7 +128,7 @@ struct DuckInfoDTO {
     string name;
     address owner;
     uint40 hatchTime;
-    // TODO : update to mapping uint uint to store multiple random number (create enum ?)
+    // used for duck generation
     uint256 randomNumber;
     DuckStatusType status;
     int16[] characteristics;
@@ -145,6 +145,7 @@ struct DuckInfoDTO {
     //The kinship value of this Duck. Default is 50.
     uint256 kinship;
     uint256 lastInteracted;
+    uint40 satiationTime;
     //How much XP this Duck has accrued. Begins at 0.
     uint256 experience;
     uint256 toNextLevel;

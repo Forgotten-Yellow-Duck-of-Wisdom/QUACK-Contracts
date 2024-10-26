@@ -19,6 +19,7 @@ forge script scripts/createFirstCycle.s.sol:CreateFirstCycle --broadcast -vvvv
 - [~] Add Items feature (set first skin for cycle)
 --> is badges part or separate of wearables items ?
 --> add pet logic (now separated from wearables)
+--> add colorbody id mapping to store onchain duck color as not item ?
 - [ ] Add collateral info to Duck Info ?
 - [ ] Add extra state //happy, ok, not well, angry, dead
 - [ ] Add elo score for ranking games 

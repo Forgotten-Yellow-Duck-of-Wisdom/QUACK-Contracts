@@ -14,22 +14,22 @@ contract TestDuck is TestBaseContract {
     // Utils
     ///////////////////////////////////////////////////////////////////////////////////
 
-    function util_createCycle(uint24 _cycleMaxSize, uint256 _eggPrice, uint256[] memory _bodyColorItemIds) internal {
-        uint256 createdId = diamond.createCycle(_cycleMaxSize, _eggPrice, _bodyColorItemIds);
+    function util_createCycle(uint24 _cycleMaxSize, uint256 _eggPrice, uint256[] memory _bodyColorIds) internal {
+        uint256 createdId = diamond.createCycle(_cycleMaxSize, _eggPrice, _bodyColorIds);
         (cycleId, cycle) = diamond.currentCycle();
         assertEq(createdId, cycleId, "util_createCycle: Invalid Cycle Id");
         assertEq(cycle.cycleMaxSize, _cycleMaxSize, "util_createCycle: Invalid Cycle Max Size");
         assertEq(cycle.eggsPrice, _eggPrice, "util_createCycle: Invalid Egg Price");
         assertEq(cycle.totalCount, 0, "util_createCycle: Invalid Total Count");
         assertEq(
-            cycle.allowedBodyColorItemIds.length,
-            _bodyColorItemIds.length,
+            cycle.allowedBodyColorIds.length,
+            _bodyColorIds.length,
             "util_createCycle: Invalid Allowed Body Color Item Id"
         );
-        for (uint256 i; i < _bodyColorItemIds.length; i++) {
+        for (uint256 i; i < _bodyColorIds.length; i++) {
             assertEq(
-                cycle.allowedBodyColorItemIds[i],
-                _bodyColorItemIds[i],
+                cycle.allowedBodyColorIds[i],
+                _bodyColorIds[i],
                 "util_createCycle: Invalid Allowed Body Color Item Id"
             );
         }
@@ -72,7 +72,6 @@ contract TestDuck is TestBaseContract {
         uint256 mintPrice = cycle.eggsPrice;
         // quackToken.mint(account1, 1000000000000000000);
         // Approve QUACK tokens for spending
-
         quackToken.approve(address(diamond), mintPrice);
 
         // Mint a duck
@@ -88,54 +87,183 @@ contract TestDuck is TestBaseContract {
         // Assert cycle state updated
         (, Cycle memory updatedCycle) = diamond.currentCycle();
         assertEq(updatedCycle.totalCount, 1, "Cycle total count not updated");
+
+        DuckInfoDTO memory duckInfo = diamond.getDuckInfo(duckId);
+        assertEq(uint256(duckInfo.status), uint256(DuckStatusType.CLOSED_EGGS), "Duck should be in EGG state");
+        assertEq(duckInfo.experience, 0, "Duck should start with 0 XP");
+        assertEq(duckInfo.level, 0, "Eggs should start at level 0");
     }
 
-    function testFailMintEggsInsufficientBalance() public {
-        // Attempt to mint without sufficient balance
-        vm.expectRevert("Insufficient balance");
-        diamond.buyEggs(account1);
+function testFailMintEggsInsufficientBalance() public {
+    // Get initial balances
+    uint256 initialBalance = quackToken.balanceOf(account1);
+    uint256 mintPrice = cycle.eggsPrice;
+    
+    // Verify initial state
+    assertEq(initialBalance, 0, "Account1 should start with 0 balance");
+    
+    // Try to approve tokens (should fail as account1 has no balance)
+    vm.startPrank(account1);
+    vm.expectRevert("ERC20: insufficient balance");
+    quackToken.approve(address(diamond), mintPrice);
+    vm.stopPrank();
+
+    // Try direct mint (should fail)
+    vm.expectRevert("ERC20: insufficient allowance");
+    diamond.buyEggs(account1);
+
+    // Verify no state changes occurred
+    assertEq(quackToken.balanceOf(account1), 0, "Balance should remain 0");
+    assertEq(diamond.balanceOf(account1), 0, "Should have no eggs");
+}
+
+function testMintFullEggsSupply() public {
+    uint256 cycleMaxSize = cycle.cycleMaxSize;
+    uint256 mintPrice = cycle.eggsPrice;
+    uint256 initialBalance = quackToken.balanceOf(account0);
+
+    // Approve QUACK tokens for spending
+    quackToken.approve(address(diamond), mintPrice * cycleMaxSize);
+
+    // Track all minted IDs
+    uint64[] memory mintedIds = new uint64[](cycleMaxSize);
+
+    // Mint ducks until the cycle is full
+    for (uint256 i = 0; i < cycleMaxSize; i++) {
+        uint64 duckId = diamond.buyEggs(account0);
+        mintedIds[i] = duckId;
+        
+        // Verify each minted egg
+        assertEq(diamond.ownerOf(duckId), account0, "Duck not minted to correct address");
+        
+        DuckInfoDTO memory duckInfo = diamond.getDuckInfo(duckId);
+        assertEq(uint256(duckInfo.status), uint256(DuckStatusType.CLOSED_EGGS), "Duck should be in EGG state");
+        assertEq(duckInfo.experience, 0, "Duck should start with 0 XP");
+        assertEq(duckInfo.level, 0, "Eggs should start at level 0");
     }
 
-    function testMintFullEggsSupply() public {
-        uint256 cycleMaxSize = cycle.cycleMaxSize;
-        uint256 mintPrice = cycle.eggsPrice;
+    // Assert final state
+    (, Cycle memory updatedCycle) = diamond.currentCycle();
+    assertEq(updatedCycle.totalCount, cycleMaxSize, "Cycle not full");
+    assertEq(diamond.balanceOf(account0), cycleMaxSize, "Incorrect final balance");
+    assertEq(
+        quackToken.balanceOf(account0), 
+        initialBalance - (mintPrice * cycleMaxSize), 
+        "Incorrect final QUACK balance"
+    );
 
-        // Approve QUACK tokens for spending
-        quackToken.approve(address(diamond), mintPrice * cycleMaxSize);
+    // Attempt to mint one more duck, should fail
+    vm.expectRevert("DuckGameFacet: Exceeded max number of duck for this cycle");
+    diamond.buyEggs(account0);
 
-        // Mint ducks until the cycle is full
-        for (uint256 i = 0; i < cycleMaxSize; i++) {
-            uint64 duckId = diamond.buyEggs(account0);
-            assertEq(diamond.ownerOf(duckId), account0, "Duck not minted to correct address");
-        }
+    // Verify cycle state didn't change after failed mint
+    (, updatedCycle) = diamond.currentCycle();
+    assertEq(updatedCycle.totalCount, cycleMaxSize, "Cycle count should not change after failed mint");
+}
 
-        // Assert cycle is full
-        (, Cycle memory updatedCycle) = diamond.currentCycle();
-        assertEq(updatedCycle.totalCount, cycleMaxSize, "Cycle not full");
-
-        // Attempt to mint one more duck, should fail
-        vm.expectRevert("DuckGameFacet: Exceeded max number of duck for this cycle");
-        diamond.buyEggs(account0);
-    }
-
-    function testBasicDuckHatching() public {
-        testBasicEggsMint();
-        uint256 vrfPrice = diamond.getVRFRequestPrice();
-        uint64[] memory ids = new uint64[](1);
-        ids[0] = 0;
-        diamond.openEggs{value: vrfPrice}(ids);
-        // repick 2 times to get the last random duck
+function testEggRepicking() public {
+    // First mint an egg and open it
+    testBasicEggsMint();
+    
+    uint256 vrfPrice = diamond.getVRFRequestPrice();
+    uint64[] memory ids = new uint64[](1);
+    ids[0] = 0;
+    
+    // Verify initial egg state before opening
+    DuckInfoDTO memory eggInfo = diamond.getDuckInfo(0);
+    assertEq(uint256(eggInfo.status), uint256(DuckStatusType.CLOSED_EGGS), "Initial state should be CLOSED_EGGS");
+    
+    // Open egg with VRF
+    diamond.openEggs{value: vrfPrice}(ids);
+    
+    // Verify egg state after opening
+    eggInfo = diamond.getDuckInfo(0);
+    assertEq(uint256(eggInfo.status), uint256(DuckStatusType.OPEN_EGG), "Egg should be in OPEN_EGG state");
+    
+    // Test multiple repicks and verify state changes
+    for (uint256 i = 0; i < 2; i++) {
+        // Store pre-repick state
+        uint8 repickCount = diamond.getEggRepickCount(0);
+        
+        // Perform repick
         diamond.repickEgg(0);
-        diamond.repickEgg(0);
-        uint256 minStake = 1;
-        uint256 chosenDuck = 9;
-        quackToken.approve(address(diamond), minStake);
-        diamond.claimDuck(ids[0], chosenDuck, minStake);
-
-        DuckInfoDTO memory duckInfo = diamond.getDuckInfo(0);
-        assertEq(uint256(duckInfo.status), uint256(DuckStatusType.DUCK), "Duck not hatched");
-        assertEq(duckInfo.collateral, address(quackToken), "Duck not hatched");
+        
+        // Verify status remains correct
+        DuckInfoDTO memory postRepick = diamond.getDuckInfo(0);
+        assertEq(uint256(postRepick.status), uint256(DuckStatusType.OPEN_EGG), "Egg should remain OPEN_EGG after repick");
+        
+        // Verify repick count increased
+        assertTrue(diamond.getEggRepickCount(0) == repickCount + 3, "Repick count should increase");
     }
+    
+    // Test failure cases
+    vm.expectRevert("DuckGameFacet: Egg not open");
+    diamond.repickEgg(999); // Non-existent egg
+    
+    // Claim the duck to test repicking after claiming
+    uint256 minStake = 1;
+    uint256 chosenDuck = 9;
+    quackToken.approve(address(diamond), minStake);
+    diamond.claimDuck(ids[0], chosenDuck, minStake);
+    
+    vm.expectRevert("DuckGameFacet: Egg not open");
+    diamond.repickEgg(0); // Already claimed duck
+}
+
+function testBasicDuckHatching() public {
+    // First mint an egg
+    testBasicEggsMint();
+    
+    // Get initial state
+    uint256 initialBalance = quackToken.balanceOf(account0);
+    uint256 vrfPrice = diamond.getVRFRequestPrice();
+    
+    // Setup egg opening
+    uint64[] memory ids = new uint64[](1);
+    ids[0] = 0;
+    
+    // Verify initial egg state
+    DuckInfoDTO memory eggInfo = diamond.getDuckInfo(0);
+    assertEq(uint256(eggInfo.status), uint256(DuckStatusType.CLOSED_EGGS), "Initial state should be CLOSED_EGGS");
+    
+    // Open egg with VRF and verify payment
+    uint256 preVrfBalance = address(account0).balance;
+    diamond.openEggs{value: vrfPrice}(ids);
+    assertEq(address(account0).balance, preVrfBalance - vrfPrice, "VRF payment incorrect");
+    
+    // Verify egg state after opening
+    eggInfo = diamond.getDuckInfo(0);
+    assertEq(uint256(eggInfo.status), uint256(DuckStatusType.OPEN_EGG), "Egg should be in OPEN_EGGS state");
+    
+    // Setup for claiming
+    uint256 minStake = 1;
+    uint256 chosenDuck = 1;
+    
+    // Approve tokens for staking
+    quackToken.approve(address(diamond), minStake);
+    
+    // Get pre-claim state
+    uint256 preClaimBalance = quackToken.balanceOf(account0);
+    
+    // Claim the duck
+    diamond.claimDuck(ids[0], chosenDuck, minStake);
+    
+    // Verify final state
+    DuckInfoDTO memory duckInfo = diamond.getDuckInfo(0);
+    assertEq(uint256(duckInfo.status), uint256(DuckStatusType.DUCK), "Duck not hatched");
+    assertEq(duckInfo.collateral, address(quackToken), "Wrong collateral address");
+    assertEq(duckInfo.stakedAmount, minStake, "Wrong staked amount");
+    assertEq(quackToken.balanceOf(account0), preClaimBalance - minStake, "Wrong final balance");
+    
+    // Verify initial duck properties based on LibDuck.sol
+    assertEq(uint40(block.timestamp - 12 hours), duckInfo.lastInteracted, "Wrong last interaction time");
+    // assertEq(uint40(50), duckInfo.interactionCount, "Wrong interaction count");
+    assertEq(uint40(block.timestamp), duckInfo.hatchTime, "Wrong hatch time");
+    assertEq(uint40(block.timestamp), duckInfo.satiationTime, "Wrong satiation time");
+    
+    // Verify duck ownership hasn't changed
+    assertEq(diamond.ownerOf(0), account0, "Duck ownership should remain unchanged");
+}
 
     // function testDuckLevel() public {
     //     testBasicDuckHatching();

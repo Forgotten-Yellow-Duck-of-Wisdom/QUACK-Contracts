@@ -53,7 +53,7 @@ library LibDuck {
     function claimDuck(uint64 _duckId, address _owner, uint256 _option, uint256 _stakeAmount) internal {
         AppStorage storage s = LibAppStorage.diamondStorage();
         DuckInfo storage duck = s.ducks[_duckId];
-        console2.log("duck.status", uint256(duck.status));
+        // console2.log("duck.status", uint256(duck.status));
         require(duck.status == DuckStatusType.OPEN_EGG, "DuckGameFacet: Egg not open");
         require(
             _option >= (s.eggRepickOptions[_duckId] + 1) && _option <= (s.eggRepickOptions[_duckId] + 3),
@@ -79,7 +79,7 @@ library LibDuck {
         for (uint16 i; i < uint16(type(DuckStatisticsType).max); i++) {
             uint16 maxStat = option.statistics[i];
             duck.maxStatistics[i] = maxStat;
-            duck.statistics[i] = maxStat;
+            duck.statistics[i] = maxStat / 2;
         }
 
         require(_stakeAmount >= option.minimumStake, "DuckGameFacet: _stakeAmount less than minimum stake");
@@ -240,6 +240,7 @@ library LibDuck {
             duckInfo_.minimumStake = s.ducks[_duckId].minimumStake;
             duckInfo_.kinship = kinship(_duckId);
             duckInfo_.lastInteracted = s.ducks[_duckId].lastInteracted;
+            duckInfo_.satiationTime = s.ducks[_duckId].satiationTime;
             duckInfo_.experience = s.ducks[_duckId].experience;
             duckInfo_.toNextLevel = getRequiredXP(s.ducks[_duckId].level, duckInfo_.experience);
             duckInfo_.level = s.ducks[_duckId].level;
@@ -402,7 +403,7 @@ library LibDuck {
             singleEggDuckTraits_.statistics =
             LibMaths.calculateMaxStatistics(randomNumberN, s.collateralTypeInfo[collateralType], singleEggDuckTraits_.characteristics);
         singleEggDuckTraits_.collateralType = collateralType;
-        singleEggDuckTraits_.bodyColorItemId = s.cycles[_cycleId].allowedBodyColorItemIds[randomNumberN % s.cycles[_cycleId].allowedBodyColors.length];
+        singleEggDuckTraits_.bodyColorId = s.cycles[_cycleId].allowedBodyColorIds[randomNumberN % s.cycles[_cycleId].allowedBodyColorIds.length];
 
         // TODO : wip dynamic collateral price
         // CollateralTypeInfo memory collateralInfo = s.collateralTypeInfo[collateralType];
@@ -421,36 +422,37 @@ library LibDuck {
         singleEggDuckTraits_.minimumStake = 1;
     }
 
-    ///@notice Query the available skill points that can be used for an NFT
-    ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used
-    ///@param _duckId The identifier of the NFT to query
-    ///@return   An unsigned integer which represents the available skill points of an NFT with identifier `_duckId`
-    function availableSkillPoints(uint64 _duckId) internal view returns (uint256) {
-        AppStorage storage s = LibAppStorage.diamondStorage();
-        uint256 skillPoints = LibDuck.calculateSkillPoints(s.ducks[_duckId].level, s.ducks[_duckId].hatchTime);
-        uint256 usedSkillPoints = s.ducks[_duckId].usedSkillPoints;
-        require(skillPoints >= usedSkillPoints, "LibDuck: Used skill points is greater than skill points");
-        return skillPoints - usedSkillPoints;
-    }
+    // TODO : @dev - wip skills systems
+    // ///@notice Query the available skill points that can be used for an NFT
+    // ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used
+    // ///@param _duckId The identifier of the NFT to query
+    // ///@return   An unsigned integer which represents the available skill points of an NFT with identifier `_duckId`
+    // function availableSkillPoints(uint64 _duckId) internal view returns (uint256) {
+    //     AppStorage storage s = LibAppStorage.diamondStorage();
+    //     uint256 skillPoints = LibDuck.calculateSkillPoints(s.ducks[_duckId].level, s.ducks[_duckId].hatchTime);
+    //     uint256 usedSkillPoints = s.ducks[_duckId].usedSkillPoints;
+    //     require(skillPoints >= usedSkillPoints, "LibDuck: Used skill points is greater than skill points");
+    //     return skillPoints - usedSkillPoints;
+    // }
 
-    function calculateSkillPoints(uint256 level, uint256 hatchTime) internal view returns (uint256) {
-        uint256 skillPoints = (level / 3);
-        uint256 ageDifference = block.timestamp - hatchTime;
-        return skillPoints + calculateSkillPointsByAge(ageDifference);
-    }
+    // function calculateSkillPoints(uint256 level, uint256 hatchTime) internal view returns (uint256) {
+    //     uint256 skillPoints = (level / 3);
+    //     uint256 ageDifference = block.timestamp - hatchTime;
+    //     return skillPoints + calculateSkillPointsByAge(ageDifference);
+    // }
 
-    function calculateSkillPointsByAge(uint256 _age) internal pure returns (uint256) {
-        uint256 skillPointsByAge = 0;
-        uint256[10] memory fibSequence = [uint256(1), 2, 3, 5, 8, 13, 21, 34, 55, 89];
-        for (uint256 i = 0; i < fibSequence.length; i++) {
-            if (_age > fibSequence[i] * 2300000) {
-                skillPointsByAge++;
-            } else {
-                break;
-            }
-        }
-        return skillPointsByAge;
-    }
+    // function calculateSkillPointsByAge(uint256 _age) internal pure returns (uint256) {
+    //     uint256 skillPointsByAge = 0;
+    //     uint256[10] memory fibSequence = [uint256(1), 2, 3, 5, 8, 13, 21, 34, 55, 89];
+    //     for (uint256 i = 0; i < fibSequence.length; i++) {
+    //         if (_age > fibSequence[i] * 2300000) {
+    //             skillPointsByAge++;
+    //         } else {
+    //             break;
+    //         }
+    //     }
+    //     return skillPointsByAge;
+    // }
 
     /////////////////////////////////////////////////////////////////////////////////
     // Utils
@@ -497,7 +499,6 @@ library LibDuck {
         returns (uint256[] memory wearablesArray_)
     {
         uint256 wearableCount = uint256(type(DuckWearableSlot).max) + 1;
-        // uint256 wearableCount = 16;
 
         wearablesArray_ = new uint256[](wearableCount);
 

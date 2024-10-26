@@ -47,7 +47,7 @@ library LibMaths {
         return characteristics_;
     }
 
-    function calculateMaxStatistics(uint256 _randomNumber, CollateralTypeInfo storage _collateralType, int16[] memory _characteristics, uint16[] memory _charactisticsBoosts) internal view returns (uint16[] memory statistics_) {
+    function calculateMaxStatistics(uint256 _randomNumber, CollateralTypeInfo storage _collateralType, int16[] memory _characteristics) internal view returns (uint16[] memory statistics_) {
         uint256 statisticsCount = uint256(type(DuckStatisticsType).max) + 1;
         statistics_ = new uint16[](statisticsCount);
         for (uint256 i; i < statisticsCount; i++) {

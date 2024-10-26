@@ -85,6 +85,11 @@ contract DuckGameFacet is AccessControl {
         emit RepickEgg(_duckId, s.eggRepickOptions[_duckId]);
     }
 
+    function getEggRepickCount(uint64 _duckId) external view returns (uint8 repickCount_) {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        repickCount_ = s.eggRepickOptions[_duckId];
+    }
+
     ///@notice Allows the owner of an NFT(Portal) to claim an Duck provided it has been unlocked
     ///@dev Will throw if the Portal(with identifier `_duckId`) has not been opened(Unlocked) yet
     ///@dev If the NFT(Portal) with identifier `_duckId` is listed for sale on the baazaar while it is being unlocked, that listing is cancelled
@@ -184,20 +189,20 @@ contract DuckGameFacet is AccessControl {
         characteristics_ = LibDuck.getDuckCharacteristics(_duckId);
     }
 
-    ///@notice Query the skill reset count of an Duck
-    ///@param _duckId The identifier of the Duck to query
-    ///@return respecCount_ The number of times an Duck has performed a skill reset
-    function respecCount(uint64 _duckId) external view returns (uint256 respecCount_) {
-        respecCount_ = LibAppStorage.diamondStorage().duckRespecCount[_duckId];
-    }
+    // ///@notice Query the skill reset count of an Duck
+    // ///@param _duckId The identifier of the Duck to query
+    // ///@return respecCount_ The number of times an Duck has performed a skill reset
+    // function respecCount(uint64 _duckId) external view returns (uint256 respecCount_) {
+    //     respecCount_ = LibAppStorage.diamondStorage().duckRespecCount[_duckId];
+    // }
 
-    ///@notice Query the available skill points that can be used for an NFT
-    ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used
-    ///@param _duckId The identifier of the NFT to query
-    ///@return availableSkillPoints_ An unsigned integer which represents the available skill points of an NFT with identifier `_duckId`
-    function availableSkillPoints(uint64 _duckId) external view returns (uint256 availableSkillPoints_) {
-        availableSkillPoints_ = LibDuck.availableSkillPoints(_duckId);
-    }
+    // ///@notice Query the available skill points that can be used for an NFT
+    // ///@dev Will throw if the amount of skill points available is greater than or equal to the amount of skill points which have been used
+    // ///@param _duckId The identifier of the NFT to query
+    // ///@return availableSkillPoints_ An unsigned integer which represents the available skill points of an NFT with identifier `_duckId`
+    // function availableSkillPoints(uint64 _duckId) external view returns (uint256 availableSkillPoints_) {
+    //     availableSkillPoints_ = LibDuck.availableSkillPoints(_duckId);
+    // }
 
     ///@notice Calculate the XP needed for an NFT to advance to the next level
     ///@dev Only valid for claimed Ducks
