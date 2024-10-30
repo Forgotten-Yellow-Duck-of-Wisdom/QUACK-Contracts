@@ -400,10 +400,12 @@ library LibDuck {
             s.cycleCollateralTypes[_cycleId][randomNumberN % s.cycleCollateralTypes[_cycleId].length];
         singleEggDuckTraits_.characteristics =
             LibMaths.calculateCharacteristics(randomNumberN, s.collateralTypeInfo[collateralType], _cycleId);
-            singleEggDuckTraits_.statistics =
-            LibMaths.calculateMaxStatistics(randomNumberN, s.collateralTypeInfo[collateralType], singleEggDuckTraits_.characteristics);
+        singleEggDuckTraits_.statistics = LibMaths.calculateMaxStatistics(
+            randomNumberN, s.collateralTypeInfo[collateralType], singleEggDuckTraits_.characteristics
+        );
         singleEggDuckTraits_.collateralType = collateralType;
-        singleEggDuckTraits_.bodyColorId = s.cycles[_cycleId].allowedBodyColorIds[randomNumberN % s.cycles[_cycleId].allowedBodyColorIds.length];
+        singleEggDuckTraits_.bodyColorId =
+            s.cycles[_cycleId].allowedBodyColorIds[randomNumberN % s.cycles[_cycleId].allowedBodyColorIds.length];
 
         // TODO : wip dynamic collateral price
         // CollateralTypeInfo memory collateralInfo = s.collateralTypeInfo[collateralType];
