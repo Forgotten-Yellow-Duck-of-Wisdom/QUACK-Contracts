@@ -5,12 +5,13 @@ import {AccessControl} from "../shared/AccessControl.sol";
 import {AppStorage, LibAppStorage} from "../libs/LibAppStorage.sol";
 // import {LibERC721} from "../libs/LibERC721.sol";
 import {LibERC20} from "../libs/LibERC20.sol";
+import {LibERC1155} from "../libs/LibERC1155.sol";
 import {LibString} from "../libs/LibString.sol";
 import {LibDuck} from "../libs/LibDuck.sol";
 import {LibItems} from "../libs/LibItems.sol";
 import {ItemType, ItemTypeDTO, ItemIdDTO} from "../shared/Structs_Items.sol";
 import {DuckInfo, DuckWearableSlot, DuckStatusType} from "../shared/Structs_Ducks.sol";
-
+import {IERC20} from "../interfaces/IERC20.sol";
 contract ItemFacet is AccessControl {
     event UseConsumables(uint256 indexed _tokenId, uint256[] _itemIds, uint256[] _quantities);
 
@@ -196,8 +197,79 @@ contract ItemFacet is AccessControl {
     {
         require(
             LibAppStorage.diamondStorage().ducks[_duckId].status == DuckStatusType.DUCK,
-            "LibDuck: Only valid for Hatched Duck"
+            "ItemFacet: Only valid for Hatched Duck"
         );
         LibItems._useConsumables(_msgSender(), _duckId, _itemIds, _quantities);
+    }
+
+    ///@notice Allow an address to purchase multiple items
+    ///@dev Buying an item typically mints it, it will throw if an item has reached its maximum quantity
+    ///@param _to Address to send the items once purchased
+    ///@param _itemIds The identifiers of the items to be purchased
+    ///@param _quantities The quantities of each item to be bought
+    function purchaseItemsWithQuack(
+        address _to,
+        uint256[] calldata _itemIds,
+        uint256[] calldata _quantities
+    ) external {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        address sender = _msgSender();
+        require(_itemIds.length == _quantities.length, "ItemFacet: _itemIds not same length as _quantities");
+        uint256 totalPrice;
+        for (uint256 i; i < _itemIds.length; i++) {
+            uint256 itemId = _itemIds[i];
+            uint256 quantity = _quantities[i];
+            ItemType storage itemType = s.itemTypes[itemId];
+            require(itemType.canPurchaseWithQuack, "ItemFacet: Can't purchase item type with Quack");
+            uint256 totalQuantity = itemType.totalQuantity + quantity;
+            require(totalQuantity <= itemType.maxQuantity, "ItemFacet: Total item type quantity exceeds max quantity");
+            itemType.totalQuantity = totalQuantity;
+            totalPrice += quantity * itemType.quackPrice;
+            LibItems.addToOwner(_to, itemId, quantity);
+        }
+        uint256 quackBalance = IERC20(s.quackTokenAddress).balanceOf(sender);
+        require(quackBalance >= totalPrice, "ItemFacet: Not enough $QUACK!");
+        // TODO emit event
+        // emit PurchaseItemsWithQuack(sender, _to, _itemIds, _quantities, totalPrice);
+        // IEventHandlerFacet(s.wearableDiamond).emitTransferBatchEvent(sender, address(0), _to, _itemIds, _quantities);
+        LibDuck.purchase(sender, totalPrice);
+        // LibERC1155.onERC1155BatchReceived(sender, address(0), _to, _itemIds, _quantities, "");
+    }   
+
+    ///@notice Allow an address to purchase multiple items after they have been minted
+    ///@dev Only one item per transaction can be purchased from the Diamond contract
+    ///@param _to Address to send the items once purchased
+    ///@param _itemIds The identifiers of the items to be purchased
+    ///@param _quantities The quantities of each item to be bought
+
+    function purchaseTransferItemsWithQuack(
+        address _to,
+        uint256[] calldata _itemIds,
+        uint256[] calldata _quantities
+    ) external {
+        AppStorage storage s = LibAppStorage.diamondStorage();
+        require(_to != address(0), "ItemFacet: Can't transfer to 0 address");
+        require(_itemIds.length == _quantities.length, "ItemFacet: ids not same length as values");
+        address sender = _msgSender();
+        address from = address(this);
+        uint256 totalPrice;
+        for (uint256 i; i < _itemIds.length; i++) {
+            uint256 itemId = _itemIds[i];
+            uint256 quantity = _quantities[i];
+            require(quantity == 1, "ItemFacet: Can only purchase 1 of an item per transaction");
+            ItemType storage itemType = s.itemTypes[itemId];
+            require(itemType.canPurchaseWithQuack, "ItemFacet: Can't purchase item type with QUACK");
+            totalPrice += quantity * itemType.quackPrice;
+            LibItems.removeFromOwner(from, itemId, quantity);
+            LibItems.addToOwner(_to, itemId, quantity);
+            // LibERC1155Marketplace.updateERC1155Listing(address(this), itemId, from);
+        }
+        uint256 quackBalance = IERC20(s.quackTokenAddress).balanceOf(sender);
+        require(quackBalance >= totalPrice, "ItemFacet: Not enough $QUACK!");
+        // TODO emit event
+        // IEventHandlerFacet(s.wearableDiamond).emitTransferBatchEvent(sender, from, _to, _itemIds, _quantities);
+        // emit PurchaseTransferItemsWithQuack(sender, _to, _itemIds, _quantities, totalPrice);
+        LibDuck.purchase(sender, totalPrice);
+        LibERC1155.onERC1155BatchReceived(sender, from, _to, _itemIds, _quantities, "");
     }
 }

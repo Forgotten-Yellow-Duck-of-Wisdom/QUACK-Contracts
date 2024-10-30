@@ -350,8 +350,14 @@ library LibItems {
                         s.ducks[_duckId].statistics[j] += uint16(itemType.statisticsModifiers[j]);
                     } else if (itemType.statisticsModifiers[j] < 0) {
                         uint16 absModifier = uint16(LibMaths.abs(int256(itemType.statisticsModifiers[j])));
-                        require(s.ducks[_duckId].statistics[j] >= absModifier, "ItemsFacet: Statistics underflow"); // TODO:  reached 0 ?
-                        s.ducks[_duckId].statistics[j] -= absModifier;
+                        // require(s.ducks[_duckId].statistics[j] >= absModifier, "ItemsFacet: Statistics underflow"); // TODO:  reached 0 ?
+                        // s.ducks[_duckId].statistics[j] -= absModifier;
+                            // Instead of requiring and reverting, clamp to 0
+                        if (s.ducks[_duckId].statistics[j] >= absModifier) {
+                            s.ducks[_duckId].statistics[j] -= absModifier;
+                        } else {
+                            s.ducks[_duckId].statistics[j] = 0;
+                        }
                     }
                 }
             }
