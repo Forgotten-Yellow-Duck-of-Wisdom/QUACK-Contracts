@@ -13,6 +13,10 @@ baseSepolia testnet
 forge script scripts/createFirstCycle.s.sol:CreateFirstCycle --broadcast -vvvv
 ```
 
+
+- [ ] modif - les user peuvent maintenant consume des items meme en oeufs (check potentielles erreurs)
+- [ ] modif - items avec maxQty 0 = infinie maintenant (check potentielles erreurs)
+- [ ] fix stats - max stats set at eggs buy / egg claim twice
 ## TODO 
 - [ ] Fix characterstics / statistics / traits on item, wearables / consumables etc 
 - [ ] Add Respec for Ducks feature

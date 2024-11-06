@@ -60,6 +60,9 @@
 
 //         // Add collateral
 //         diamond.addCollateralTypes(cycleId, collateralTypes);
+				
+//         // Set game manager to account0 to allow XP grants
+//         diamond.setGameManager(account0, true);
 //     }
 
 //     ///////////////////////////////////////////////////////////////////////////////////
@@ -90,6 +93,12 @@
 //         assertEq(uint256(duckInfo.status), uint256(DuckStatusType.CLOSED_EGGS), "Duck should be in EGG state");
 //         assertEq(duckInfo.experience, 0, "Duck should start with 0 XP");
 //         assertEq(duckInfo.level, 0, "Eggs should start at level 0");
+
+//         uint64[] memory duckIds = new uint64[](1);
+//         duckIds[0] = 0;
+//         uint256[] memory amounts = new uint256[](1);
+//         amounts[0] = 1000;	
+//         diamond.grantExperience(duckIds, amounts);
 //     }
 
 //     function testFailMintEggsInsufficientBalance() public {
@@ -189,7 +198,8 @@
 //             assertEq(
 //                 uint256(postRepick.status), uint256(DuckStatusType.OPEN_EGG), "Egg should remain OPEN_EGG after repick"
 //             );
-
+// 						EggDuckTraitsDTO[3] memory eggDuckTraits = diamond.eggDuckTraits(0);
+// 						console2.log("eggDuckTraits", eggDuckTraits[0].randomNumber);
 //             // Verify repick count increased
 //             assertTrue(diamond.getEggRepickCount(0) == repickCount + 3, "Repick count should increase");
 //         }
@@ -263,111 +273,110 @@
 //         assertEq(diamond.ownerOf(0), account0, "Duck ownership should remain unchanged");
 //     }
 
-//     function testDuckLeveling() public {
-//         // First get a hatched duck
-//         testBasicDuckHatching();
+// 	// TODO : refacto with +1 level granted for hatching
+//     // function testDuckLeveling() public {
+//     //     // First get a hatched duck
+//     //     testBasicDuckHatching();
 
-//         // Set game manager to account0 to allow XP grants
-//         diamond.setGameManager(account0, true);
 
-//         // Get initial duck state
-//         DuckInfoDTO memory initialDuck = diamond.getDuckInfo(0);
-//         assertEq(initialDuck.level, 0, "Duck should start at level 0");
-//         assertEq(initialDuck.experience, 0, "Duck should start with 0 XP");
+//     //     // Get initial duck state
+//     //     DuckInfoDTO memory initialDuck = diamond.getDuckInfo(0);
+//     //     assertEq(initialDuck.level, 0, "Duck should start at level 0");
+//     //     assertEq(initialDuck.experience, 0, "Duck should start with 0 XP");
 
-//         // Get XP table and verify its size
-//         uint256[] memory xpTable = diamond.xpTable();
-//         assertEq(xpTable.length, 100, "XP table should have 100 levels");
+//     //     // Get XP table and verify its size
+//     //     uint256[] memory xpTable = diamond.xpTable();
+//     //     assertEq(xpTable.length, 100, "XP table should have 100 levels");
 
-//         // Verify first few known XP thresholds from InitDiamond.sol
-//         assertEq(xpTable[0], 246, "Wrong XP for level 0");
-//         assertEq(xpTable[1], 271, "Wrong XP for level 1");
-//         assertEq(xpTable[2], 296, "Wrong XP for level 2");
-//         assertEq(xpTable[3], 320, "Wrong XP for level 3");
+//     //     // Verify first few known XP thresholds from InitDiamond.sol
+//     //     assertEq(xpTable[0], 246, "Wrong XP for level 0");
+//     //     assertEq(xpTable[1], 271, "Wrong XP for level 1");
+//     //     assertEq(xpTable[2], 296, "Wrong XP for level 2");
+//     //     assertEq(xpTable[3], 320, "Wrong XP for level 3");
 
-//         // Test progressive leveling through multiple levels
-//         for (uint256 i = 0; i < 10; i++) {
-//             uint256 requiredXp = diamond.xpUntilNextLevel(uint16(i), 0);
-//             assertEq(requiredXp, xpTable[i], "XP until next level mismatch");
+//     //     // Test progressive leveling through multiple levels
+//     //     for (uint256 i = 0; i < 10; i++) {
+//     //         uint256 requiredXp = diamond.xpUntilNextLevel(uint16(i), 0);
+//     //         assertEq(requiredXp, xpTable[i], "XP until next level mismatch");
 
-//             // Split XP into chunks of 1000 or less
-//             uint256 remainingXp = xpTable[i];
-//             while (remainingXp > 0) {
-//                 uint256 xpChunk = remainingXp > 1000 ? 1000 : remainingXp;
-//                 // console2.log(" =>>>>>>>xp chunk", xpChunk)
-//                 uint64[] memory duckIds = new uint64[](1);
-//                 duckIds[0] = 0;
-//                 uint256[] memory amounts = new uint256[](1);
-//                 amounts[0] = xpChunk;
-//                 diamond.grantExperience(duckIds, amounts);
-//                 remainingXp -= xpChunk;
-//             }
+//     //         // Split XP into chunks of 1000 or less
+//     //         uint256 remainingXp = xpTable[i];
+//     //         while (remainingXp > 0) {
+//     //             uint256 xpChunk = remainingXp > 1000 ? 1000 : remainingXp;
+//     //             // console2.log(" =>>>>>>>xp chunk", xpChunk)
+//     //             uint64[] memory duckIds = new uint64[](1);
+//     //             duckIds[0] = 0;
+//     //             uint256[] memory amounts = new uint256[](1);
+//     //             amounts[0] = xpChunk;
+//     //             diamond.grantExperience(duckIds, amounts);
+//     //             remainingXp -= xpChunk;
+//     //         }
 
-//             // Verify level up
-//             DuckInfoDTO memory updatedDuck = diamond.getDuckInfo(0);
-//             assertEq(updatedDuck.level, i + 1, "Duck should level up");
-//             assertEq(updatedDuck.experience, 0, "Experience should reset after level up");
-//         }
+//     //         // Verify level up
+//     //         DuckInfoDTO memory updatedDuck = diamond.getDuckInfo(0);
+//     //         assertEq(updatedDuck.level, i + 1, "Duck should level up");
+//     //         assertEq(updatedDuck.experience, 0, "Experience should reset after level up");
+//     //     }
 
-//         // // TODO : fix partiel xp testing
-//         // // Test partial leveling
-//         // uint256 partialXp = 240;
-//         // uint64[] memory partialDuckIds = new uint64[](1);
-//         // partialDuckIds[0] = 0;
-//         // uint256[] memory partialAmounts = new uint256[](1);
-//         // partialAmounts[0] = partialXp;
-//         // diamond.grantExperience(partialDuckIds, partialAmounts);
+//     //     // // TODO : fix partiel xp testing
+//     //     // // Test partial leveling
+//     //     // uint256 partialXp = 240;
+//     //     // uint64[] memory partialDuckIds = new uint64[](1);
+//     //     // partialDuckIds[0] = 0;
+//     //     // uint256[] memory partialAmounts = new uint256[](1);
+//     //     // partialAmounts[0] = partialXp;
+//     //     // diamond.grantExperience(partialDuckIds, partialAmounts);
 
-//         DuckInfoDTO memory partialDuck = diamond.getDuckInfo(0);
-//         // // TODO : fix partiel xp testing
-//         // assertEq(partialDuck.level, 10, "Level shouldn't change for partial XP");
-//         // assertEq(partialDuck.experience, partialXp, "Wrong partial XP amount");
+//     //     DuckInfoDTO memory partialDuck = diamond.getDuckInfo(0);
+//     //     // // TODO : fix partiel xp testing
+//     //     // assertEq(partialDuck.level, 10, "Level shouldn't change for partial XP");
+//     //     // assertEq(partialDuck.experience, partialXp, "Wrong partial XP amount");
 
-//         // Test approaching max level
-//         for (uint256 i = partialDuck.level; i < xpTable.length - 1; i++) {
-//             uint256 remainingXp = xpTable[i];
-//             while (remainingXp > 0) {
-//                 // Ensure we never grant more than 1000 XP at a time
-//                 uint256 xpChunk = remainingXp > 1000 ? 1000 : remainingXp;
-//                 uint64[] memory duckIds = new uint64[](1);
-//                 duckIds[0] = 0;
-//                 uint256[] memory amounts = new uint256[](1);
-//                 amounts[0] = xpChunk;
-//                 diamond.grantExperience(duckIds, amounts);
-//                 remainingXp -= xpChunk;
+//     //     // Test approaching max level
+//     //     for (uint256 i = partialDuck.level; i < xpTable.length - 1; i++) {
+//     //         uint256 remainingXp = xpTable[i];
+//     //         while (remainingXp > 0) {
+//     //             // Ensure we never grant more than 1000 XP at a time
+//     //             uint256 xpChunk = remainingXp > 1000 ? 1000 : remainingXp;
+//     //             uint64[] memory duckIds = new uint64[](1);
+//     //             duckIds[0] = 0;
+//     //             uint256[] memory amounts = new uint256[](1);
+//     //             amounts[0] = xpChunk;
+//     //             diamond.grantExperience(duckIds, amounts);
+//     //             remainingXp -= xpChunk;
 
-//                 // Add a small delay between chunks
-//                 vm.warp(block.timestamp + 1);
-//             } // tODO : check if perfect amount of xp = level up and 0 xp ? if a bit more xp, is xp well added ?
+//     //             // Add a small delay between chunks
+//     //             vm.warp(block.timestamp + 1);
+//     //         } // tODO : check if perfect amount of xp = level up and 0 xp ? if a bit more xp, is xp well added ?
 
-//             // Verify level progression
-//             DuckInfoDTO memory currentDuck = diamond.getDuckInfo(0);
-//             assertEq(currentDuck.level, i + 1, "Wrong level after XP grant");
-//             assertEq(currentDuck.experience, 0, "Experience should be 0 after level up");
-//         }
+//     //         // Verify level progression
+//     //         DuckInfoDTO memory currentDuck = diamond.getDuckInfo(0);
+//     //         assertEq(currentDuck.level, i + 1, "Wrong level after XP grant");
+//     //         assertEq(currentDuck.experience, 0, "Experience should be 0 after level up");
+//     //     }
 
-//         // Verify max level state
-//         DuckInfoDTO memory maxLevelDuck = diamond.getDuckInfo(0);
-//         assertEq(maxLevelDuck.level, 99, "Should reach max level");
-//         assertEq(maxLevelDuck.experience, 0, "Should have 0 XP at max level");
+//     //     // Verify max level state
+//     //     DuckInfoDTO memory maxLevelDuck = diamond.getDuckInfo(0);
+//     //     assertEq(maxLevelDuck.level, 99, "Should reach max level");
+//     //     assertEq(maxLevelDuck.experience, 0, "Should have 0 XP at max level");
 
-//         // Test XP grant at max level
-//         uint64[] memory maxDuckIds = new uint64[](1);
-//         maxDuckIds[0] = 0;
-//         uint256[] memory maxAmounts = new uint256[](1);
-//         maxAmounts[0] = 1000;
-//         diamond.grantExperience(maxDuckIds, maxAmounts);
+//     //     // Test XP grant at max level
+//     //     uint64[] memory maxDuckIds = new uint64[](1);
+//     //     maxDuckIds[0] = 0;
+//     //     uint256[] memory maxAmounts = new uint256[](1);
+//     //     maxAmounts[0] = 1000;
+//     //     diamond.grantExperience(maxDuckIds, maxAmounts);
 
-//         // Verify XP doesn't accumulate at max level
-//         DuckInfoDTO memory postMaxDuck = diamond.getDuckInfo(0);
-//         assertEq(postMaxDuck.level, 99, "Level should not exceed max");
-//         // // TODO : fix accumulation xp testing
-//         // assertEq(postMaxDuck.experience, 0, "XP should not accumulate at max level");
+//     //     // Verify XP doesn't accumulate at max level
+//     //     DuckInfoDTO memory postMaxDuck = diamond.getDuckInfo(0);
+//     //     assertEq(postMaxDuck.level, 99, "Level should not exceed max");
+//     //     // // TODO : fix accumulation xp testing
+//     //     // assertEq(postMaxDuck.experience, 0, "XP should not accumulate at max level");
 
-//         // Test failure cases
-//         vm.startPrank(account1);
-//         vm.expectRevert("LibAppStorage: Only callable by Game Manager");
-//         diamond.grantExperience(maxDuckIds, maxAmounts);
-//         vm.stopPrank();
-//     }
+//     //     // Test failure cases
+//     //     vm.startPrank(account1);
+//     //     vm.expectRevert("LibAppStorage: Only callable by Game Manager");
+//     //     diamond.grantExperience(maxDuckIds, maxAmounts);
+//     //     vm.stopPrank();
+//     // }
 // }

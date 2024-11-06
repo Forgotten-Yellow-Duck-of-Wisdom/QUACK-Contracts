@@ -66,10 +66,8 @@ library LibDuck {
         duck.randomNumber = option.randomNumber;
         duck.collateralType = option.collateralType;
         duck.minimumStake = option.minimumStake;
-        duck.lastInteracted = uint40(block.timestamp - 12 hours);
-        duck.interactionCount = 50;
         duck.hatchTime = uint40(block.timestamp);
-        duck.satiationTime = uint40(block.timestamp); // instant food possible
+        duck.bodyColorId = option.bodyColorId;
         // assign characteristics
         for (uint16 i; i < option.characteristics.length; i++) {
             duck.characteristics[uint16(i)] = option.characteristics[i];
@@ -229,6 +227,14 @@ library LibDuck {
         duckInfo_.randomNumber = s.ducks[_duckId].randomNumber;
         duckInfo_.status = s.ducks[_duckId].status;
         duckInfo_.cycleId = s.ducks[_duckId].cycleId;
+        duckInfo_.level = s.ducks[_duckId].level;
+        duckInfo_.experience = s.ducks[_duckId].experience;
+        duckInfo_.toNextLevel = getRequiredXP(s.ducks[_duckId].level, duckInfo_.experience);
+        duckInfo_.satiationTime = s.ducks[_duckId].satiationTime;
+        duckInfo_.statistics = getStatisticsArray(s.ducks[_duckId]);
+        duckInfo_.maxStatistics = getMaxStatisticsArray(s.ducks[_duckId]);
+        duckInfo_.kinship = kinship(_duckId);
+        duckInfo_.lastInteracted = s.ducks[_duckId].lastInteracted;
         if (duckInfo_.status == DuckStatusType.DUCK) {
             int16[] memory characteristics = getCharacteristicsArray(s.ducks[_duckId]);
             duckInfo_.name = s.ducks[_duckId].name;
@@ -238,15 +244,9 @@ library LibDuck {
             duckInfo_.escrow = s.ducks[_duckId].escrow;
             duckInfo_.stakedAmount = IERC20(duckInfo_.collateral).balanceOf(duckInfo_.escrow);
             duckInfo_.minimumStake = s.ducks[_duckId].minimumStake;
-            duckInfo_.kinship = kinship(_duckId);
-            duckInfo_.lastInteracted = s.ducks[_duckId].lastInteracted;
-            duckInfo_.satiationTime = s.ducks[_duckId].satiationTime;
-            duckInfo_.experience = s.ducks[_duckId].experience;
-            duckInfo_.toNextLevel = getRequiredXP(s.ducks[_duckId].level, duckInfo_.experience);
-            duckInfo_.level = s.ducks[_duckId].level;
+            duckInfo_.bodyColorId = s.ducks[_duckId].bodyColorId;
             duckInfo_.usedSkillPoints = s.ducks[_duckId].usedSkillPoints;
             duckInfo_.characteristics = characteristics;
-            duckInfo_.statistics = getStatisticsArray(s.ducks[_duckId]);
             duckInfo_.baseRarityScore = LibMaths.baseRarityScore(characteristics);
             (duckInfo_.modifiedCharacteristics, duckInfo_.modifiedRarityScore) =
                 modifiedCharacteristicsAndRarityScore(_duckId);
@@ -377,8 +377,8 @@ library LibDuck {
         uint16 cycleId = s.ducks[_duckId].cycleId;
 
         uint8 option = s.eggRepickOptions[_duckId];
-        for (uint16 i = 1; i <= eggDuckTraits_.length; i++) {
-            EggDuckTraitsDTO memory single = singleEggDuckTraits(cycleId, randomNumber, option + i);
+        for (uint16 i = 0; i < eggDuckTraits_.length; i++) {
+            EggDuckTraitsDTO memory single = singleEggDuckTraits(cycleId, randomNumber, option + i + 1);
             eggDuckTraits_[i].randomNumber = single.randomNumber;
             eggDuckTraits_[i].collateralType = single.collateralType;
             eggDuckTraits_[i].minimumStake = single.minimumStake;
@@ -492,6 +492,15 @@ library LibDuck {
 
         for (uint16 i = 0; i < statisticsCount; i++) {
             statisticsArray_[i] = duckInfo.statistics[i];
+        }
+    }
+
+    function getMaxStatisticsArray(DuckInfo storage duckInfo) internal view returns (uint16[] memory maxStatisticsArray_) {
+        uint16 statisticsCount = uint16(type(DuckStatisticsType).max) + 1;
+        maxStatisticsArray_ = new uint16[](statisticsCount);
+
+        for (uint16 i = 0; i < statisticsCount; i++) {
+            maxStatisticsArray_[i] = duckInfo.maxStatistics[i];
         }
     }
 

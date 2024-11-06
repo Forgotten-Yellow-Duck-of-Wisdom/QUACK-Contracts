@@ -195,10 +195,11 @@ contract ItemFacet is AccessControl {
         external
         isDuckOwner(_duckId)
     {
-        require(
-            LibAppStorage.diamondStorage().ducks[_duckId].status == DuckStatusType.DUCK,
-            "ItemFacet: Only valid for Hatched Duck"
-        );
+        // TODO : check if no error if even eggs can use consumables
+        // require(
+        //     LibAppStorage.diamondStorage().ducks[_duckId].status == DuckStatusType.DUCK,
+        //     "ItemFacet: Only valid for Hatched Duck"
+        // );
         LibItems._useConsumables(_msgSender(), _duckId, _itemIds, _quantities);
     }
 
@@ -222,7 +223,9 @@ contract ItemFacet is AccessControl {
             ItemType storage itemType = s.itemTypes[itemId];
             require(itemType.canPurchaseWithQuack, "ItemFacet: Can't purchase item type with Quack");
             uint256 totalQuantity = itemType.totalQuantity + quantity;
-            require(totalQuantity <= itemType.maxQuantity, "ItemFacet: Total item type quantity exceeds max quantity");
+            if(itemType.maxQuantity != 0){
+                require(totalQuantity <= itemType.maxQuantity, "ItemFacet: Total item type quantity exceeds max quantity");
+            }
             itemType.totalQuantity = totalQuantity;
             totalPrice += quantity * itemType.quackPrice;
             LibItems.addToOwner(_to, itemId, quantity);

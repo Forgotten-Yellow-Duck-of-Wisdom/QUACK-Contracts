@@ -12,7 +12,8 @@ enum ItemTypeCategory {
     WEARABLE,
     BADGE,
     CONSUMABLE,
-    CURRENCY
+    SKILL,
+    CURRENCY // (no decimals ?)
 }
 
 struct ItemType {

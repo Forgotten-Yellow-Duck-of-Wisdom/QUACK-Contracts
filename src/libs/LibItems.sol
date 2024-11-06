@@ -9,7 +9,7 @@ import {AccessControl} from "../shared/AccessControl.sol";
 import {LibDuck} from "./LibDuck.sol";
 import {LibERC1155} from "./LibERC1155.sol";
 import {LibMaths} from "./LibMaths.sol";
-
+import {console2} from "forge-std/console2.sol";
 library LibItems {
     event EquipWearables(uint64 _duckId, uint16[] _equippedWearables, uint16[] _wearablesToEquip);
     event UseConsumables(uint64 _duckId, uint256[] _itemIds, uint256[] _quantities);
@@ -292,6 +292,7 @@ library LibItems {
     ///@param _duckId Identtifier of duck to use the consumables on
     ///@param _itemIds An array containing the identifiers of the items/consumables to use
     ///@param _quantities An array containing the quantity of each consumable to use
+    
     function _useConsumables(
         address _owner,
         uint64 _duckId,
@@ -364,8 +365,9 @@ library LibItems {
 
             //Increase experience
             if (itemType.experienceBonus > 0) {
+                // console2.log("experienceBonus", itemType.experienceBonus, quantity, s.ducks[_duckId].experience);
                 uint256 experience = (uint256(itemType.experienceBonus) * quantity) + s.ducks[_duckId].experience;
-                s.ducks[_duckId].experience = experience;
+                LibDuck.addXP(_duckId, experience);
             }
 
             itemType.totalQuantity -= quantity;

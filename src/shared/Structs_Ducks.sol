@@ -142,6 +142,7 @@ struct DuckInfoDTO {
     address escrow;
     uint256 stakedAmount;
     uint256 minimumStake;
+    uint256 bodyColorId;
     //The kinship value of this Duck. Default is 50.
     uint256 kinship;
     uint256 lastInteracted;

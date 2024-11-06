@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.21;
 
-import {Cycle, EggDuckTraitsDTO, DucksIdsWithKinshipDTO, DuckStatusType} from "../shared/Structs_Ducks.sol";
+import {Cycle, EggDuckTraitsDTO, DucksIdsWithKinshipDTO, DuckStatusType, DuckStatisticsType} from "../shared/Structs_Ducks.sol";
 import {LibDuck} from "../libs/LibDuck.sol";
 import {IDuckFacet} from "../interfaces/IDuckFacet.sol";
 import {AccessControl} from "../shared/AccessControl.sol";
@@ -46,10 +46,20 @@ contract DuckGameFacet is AccessControl {
         emit BuyEggs(sender, _to, duckId, price);
         s.ducks[duckId].owner = _to;
         s.ducks[duckId].cycleId = uint16(currentCycleId);
+        s.ducks[duckId].lastInteracted = uint40(block.timestamp - 12 hours);
+        s.ducks[duckId].interactionCount = 50;
+        s.ducks[duckId].satiationTime = uint40(block.timestamp); // instant food possible
         s.duckIdIndexes[duckId] = uint64(s.duckIds.length);
         s.duckIds.push(duckId);
         s.ownerDuckIdIndexes[_to][duckId] = uint64(s.ownerDuckIds[_to].length);
         s.ownerDuckIds[_to].push(duckId);
+
+        for (uint16 i; i < uint16(type(DuckStatisticsType).max); i++) {
+            uint16 maxStat = 50;
+            s.ducks[duckId].maxStatistics[i] = maxStat;
+            s.ducks[duckId].statistics[i] = maxStat / 2;
+        }
+
         emit LibERC721.Transfer(address(0), _to, duckId);
         duckId++;
         s.duckIdCounter = duckId;
@@ -68,6 +78,7 @@ contract DuckGameFacet is AccessControl {
             require(s.ducks[duckId].status == DuckStatusType.CLOSED_EGGS, "DuckGameFacet: Eggs is not closed");
             require(owner == s.ducks[duckId].owner, "DuckGameFacet: Only duck owner can open an egg");
             require(s.ducks[duckId].locked == false, "DuckGameFacet: Can't open eggs when it is locked");
+            require(s.ducks[duckId].level > 1, "DuckGameFacet: Can't open eggs, must be at least level 1");
             LibChainlinkVRF.requestRandomWords(duckId, requestPrice);
         }
         emit OpenEggs(_duckIds);

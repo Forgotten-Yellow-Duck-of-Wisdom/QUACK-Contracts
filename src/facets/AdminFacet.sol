@@ -317,11 +317,12 @@ contract AdminFacet is AccessControl {
 
             uint256 quantity = _quantities[i];
             uint256 totalQuantity = s.itemTypes[itemId].totalQuantity + quantity;
-            require(
-                totalQuantity <= s.itemTypes[itemId].maxQuantity,
-                "AdminFacet: Total item type quantity exceeds max quantity"
-            );
-
+            if(s.itemTypes[itemId].maxQuantity != 0){
+                require(
+                    totalQuantity <= s.itemTypes[itemId].maxQuantity,
+                    "AdminFacet: Total item type quantity exceeds max quantity"
+                );
+            }
             LibItems.addToOwner(_to, itemId, quantity);
             s.itemTypes[itemId].totalQuantity = totalQuantity;
         }

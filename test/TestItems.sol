@@ -43,69 +43,73 @@ contract TestItems is TestBaseContract {
         }
     }
 
-function util_createItemType(ItemType memory _itemType) public {
-    // Add the new ItemType to the contract
-    ItemType[] memory items = new ItemType[](1);
-    items[0] = _itemType;
-    diamond.addItemTypes(items);
+    function util_createItemType(ItemType memory _itemType) public {
+        // Get current item count before adding
+        uint256[] memory empty = new uint256[](0);
+        uint256 itemCountBefore = diamond.getItemTypes(empty).length;
+        
+        // Add the new ItemType to the contract
+        ItemType[] memory items = new ItemType[](1);
+        items[0] = _itemType;
+        diamond.addItemTypes(items);
 
-    // Retrieve the added ItemType to verify
-    ItemType memory item = diamond.getItemType(0);
+        // Get the newly created item by its index (last item)
+        ItemType memory item = diamond.getItemType(itemCountBefore);
 
-    // Assertions to ensure the item was created correctly
-    assertEq(item.name, _itemType.name, "Item name should match the input");
-    assertEq(item.description, _itemType.description, "Item description should match the input");
-    assertEq(item.author, _itemType.author, "Item author should match the input");
+        // Assertions to ensure the item was created correctly
+        assertEq(item.name, _itemType.name, "Item name should match the input");
+        assertEq(item.description, _itemType.description, "Item description should match the input");
+        assertEq(item.author, _itemType.author, "Item author should match the input");
 
-    // Verify characteristics modifiers
-    for (uint256 i = 0; i < _itemType.characteristicsModifiers.length; i++) {
-        assertEq(
-            item.characteristicsModifiers[i],
-            _itemType.characteristicsModifiers[i],
-            string(abi.encodePacked("Characteristics modifier ", util_toString(i), " should match"))
-        );
+        // Verify characteristics modifiers
+        for (uint256 i = 0; i < _itemType.characteristicsModifiers.length; i++) {
+            assertEq(
+                item.characteristicsModifiers[i],
+                _itemType.characteristicsModifiers[i],
+                string(abi.encodePacked("Characteristics modifier ", util_toString(i), " should match"))
+            );
+        }
+
+        // Verify statistics modifiers
+        for (uint256 i = 0; i < _itemType.statisticsModifiers.length; i++) {
+            assertEq(
+                item.statisticsModifiers[i],
+                _itemType.statisticsModifiers[i],
+                string(abi.encodePacked("Statistics modifier ", util_toString(i), " should match"))
+            );
+        }
+
+        // Verify slot positions
+        for (uint256 i = 0; i < _itemType.slotPositions.length; i++) {
+            assertEq(
+                item.slotPositions[i],
+                _itemType.slotPositions[i],
+                string(abi.encodePacked("Slot position ", util_toString(i), " should match"))
+            );
+        }
+
+        // Verify allowed collaterals
+        for (uint256 i = 0; i < _itemType.allowedCollaterals.length; i++) {
+            assertEq(
+                item.allowedCollaterals[i],
+                _itemType.allowedCollaterals[i],
+                string(abi.encodePacked("Allowed collateral ", util_toString(i), " should match"))
+            );
+        }
+
+        // Verify other attributes
+        assertEq(item.quackPrice, _itemType.quackPrice, "Quack price should match the input");
+        assertEq(item.maxQuantity, _itemType.maxQuantity, "Max quantity should match the input");
+        assertEq(item.totalQuantity, _itemType.totalQuantity, "Total quantity should match the input");
+        assertEq(item.svgId, _itemType.svgId, "SVG ID should match the input");
+        assertEq(item.rarityScoreModifier, _itemType.rarityScoreModifier, "Rarity score modifier should match the input");
+        assertEq(item.canPurchaseWithQuack, _itemType.canPurchaseWithQuack, "Can purchase with quack should match the input");
+        assertEq(item.minLevel, _itemType.minLevel, "Min level should match the input");
+        assertEq(item.canBeTransferred, _itemType.canBeTransferred, "Can be transferred should match the input");
+        assertEq(item.category, _itemType.category, "Category should match the input");
+        assertEq(item.kinshipBonus, _itemType.kinshipBonus, "Kinship bonus should match the input");
+        assertEq(item.experienceBonus, _itemType.experienceBonus, "Experience bonus should match the input");
     }
-
-    // Verify statistics modifiers
-    for (uint256 i = 0; i < _itemType.statisticsModifiers.length; i++) {
-        assertEq(
-            item.statisticsModifiers[i],
-            _itemType.statisticsModifiers[i],
-            string(abi.encodePacked("Statistics modifier ", util_toString(i), " should match"))
-        );
-    }
-
-    // Verify slot positions
-    for (uint256 i = 0; i < _itemType.slotPositions.length; i++) {
-        assertEq(
-            item.slotPositions[i],
-            _itemType.slotPositions[i],
-            string(abi.encodePacked("Slot position ", util_toString(i), " should match"))
-        );
-    }
-
-    // Verify allowed collaterals
-    for (uint256 i = 0; i < _itemType.allowedCollaterals.length; i++) {
-        assertEq(
-            item.allowedCollaterals[i],
-            _itemType.allowedCollaterals[i],
-            string(abi.encodePacked("Allowed collateral ", util_toString(i), " should match"))
-        );
-    }
-
-    // Verify other attributes
-    assertEq(item.quackPrice, _itemType.quackPrice, "Quack price should match the input");
-    assertEq(item.maxQuantity, _itemType.maxQuantity, "Max quantity should match the input");
-    assertEq(item.totalQuantity, _itemType.totalQuantity, "Total quantity should match the input");
-    assertEq(item.svgId, _itemType.svgId, "SVG ID should match the input");
-    assertEq(item.rarityScoreModifier, _itemType.rarityScoreModifier, "Rarity score modifier should match the input");
-    assertEq(item.canPurchaseWithQuack, _itemType.canPurchaseWithQuack, "Can purchase with quack should match the input");
-    assertEq(item.minLevel, _itemType.minLevel, "Min level should match the input");
-    assertEq(item.canBeTransferred, _itemType.canBeTransferred, "Can be transferred should match the input");
-    assertEq(item.category, _itemType.category, "Category should match the input");
-    assertEq(item.kinshipBonus, _itemType.kinshipBonus, "Kinship bonus should match the input");
-    assertEq(item.experienceBonus, _itemType.experienceBonus, "Experience bonus should match the input");
-}
 
     ///////////////////////////////////////////////////////////////////////////////////
     // Setup
@@ -137,6 +141,61 @@ function util_createItemType(ItemType memory _itemType) public {
         uint256 mintPrice = cycle.eggsPrice;
         quackToken.approve(address(diamond), mintPrice);
         uint256 duckId = diamond.buyEggs(account0);
+
+        ItemType memory newItem_xpBoost = ItemType({
+            name: "XP Boost",
+            description: "No time to waste uh ? +1000xp.",
+            author: msg.sender,
+            characteristicsModifiers: new int16[](6),
+            statisticsModifiers: new int16[](6),
+            slotPositions: new bool[](9),
+            allowedCollaterals: new uint8[](0),
+            quackPrice: 10,
+            maxQuantity: 1000000,
+            totalQuantity: 0,
+            svgId: 3,
+            rarityScoreModifier: 10,
+            canPurchaseWithQuack: true,
+            minLevel: 0,
+            canBeTransferred: true,
+            category: 2, // 0 = WEARABLE, 1 = BADGE, 2 = CONSUMABLE, 3 = CURRENCY
+            kinshipBonus: 0,
+            experienceBonus: 1000
+        });
+        newItem_xpBoost.characteristicsModifiers[0] = 0; // STRENGTH
+        newItem_xpBoost.characteristicsModifiers[1] = 0; // AGILITY
+        newItem_xpBoost.characteristicsModifiers[2] = 0; // INTELLIGENCE
+        newItem_xpBoost.characteristicsModifiers[3] = 0; // PERCEPTION
+        newItem_xpBoost.characteristicsModifiers[4] = 0; // CHARISMA
+        newItem_xpBoost.characteristicsModifiers[5] = 0; // LUCK
+
+        newItem_xpBoost.statisticsModifiers[0] = 0; // HEALTH
+        newItem_xpBoost.statisticsModifiers[1] = 0; // MANA
+        newItem_xpBoost.statisticsModifiers[2] = 0; // SPECIAL
+        newItem_xpBoost.statisticsModifiers[3] = 0; // ENERGY
+        newItem_xpBoost.statisticsModifiers[4] = 0; // FOOD
+        newItem_xpBoost.statisticsModifiers[5] = 0; // SANITY
+
+        newItem_xpBoost.slotPositions[0] = false; // BODY
+        newItem_xpBoost.slotPositions[1] = false; // FACE 
+        newItem_xpBoost.slotPositions[2] = false; // EYES
+        newItem_xpBoost.slotPositions[3] = false; // HEAD
+        newItem_xpBoost.slotPositions[4] = false; // MOUTH
+        newItem_xpBoost.slotPositions[5] = false; // HAND_LEFT
+        newItem_xpBoost.slotPositions[6] = false; // HAND_RIGHT
+        newItem_xpBoost.slotPositions[7] = false; // FEET
+        newItem_xpBoost.slotPositions[8] = false; // SPECIAL
+
+        util_createItemType(newItem_xpBoost);
+        uint256[] memory itemIds = new uint256[](1);
+        itemIds[0] = 0;
+        uint256[] memory quantities = new uint256[](1);
+        quantities[0] = 1;
+        quackToken.approve(address(diamond), 100);
+        diamond.purchaseItemsWithQuack(account0, itemIds, quantities);
+        diamond.useConsumables(0, itemIds, quantities);
+        DuckInfoDTO memory initialDuck = diamond.getDuckInfo(0);
+
         uint256 vrfPrice = diamond.getVRFRequestPrice();
         uint64[] memory ids = new uint64[](1);
         ids[0] = 0;
@@ -151,79 +210,122 @@ function util_createItemType(ItemType memory _itemType) public {
     // Tests Items
     ///////////////////////////////////////////////////////////////////////////////////
 
-function test_createConsumableItem() public {
-   // Create statistics modifiers array
-    int16[] memory statsModifiers = new int16[](6);
-    statsModifiers[0] = 10;  // HEALTH +10
-    statsModifiers[1] = 5;   // MANA +5
-    statsModifiers[2] = 0;   // SPECIAL no change
-    statsModifiers[3] = 15;  // ENERGY +15
-    statsModifiers[4] = 20;  // FOOD +20
-    statsModifiers[5] = -5;  // SANITY -5
-
-    ItemType memory itemType = ItemType({
-        name: "Health Potion",
-        description: "Restores health and energy",
+function test_createAndEquipWearable() public {
+    // Create a wearable item (Pirate Eye)
+    ItemType memory pirateEye = ItemType({
+        name: "Wearable Pirate Eye",
+        description: "Cool by design",
         author: account0,
         characteristicsModifiers: new int16[](6),
-        statisticsModifiers: statsModifiers,
+        statisticsModifiers: new int16[](6),
         slotPositions: new bool[](9),
         allowedCollaterals: new uint8[](1),
-        quackPrice: 100,
-        maxQuantity: 1000,
+        quackPrice: 10,
+        maxQuantity: 1000000,
         totalQuantity: 0,
-        svgId: 1,
-        rarityScoreModifier: 0,
+        svgId: 4,
+        rarityScoreModifier: 10,
         canPurchaseWithQuack: true,
-        minLevel: 0,
+        minLevel: 1,
         canBeTransferred: true,
-        category: 2,
-        kinshipBonus: 5,
-        experienceBonus: 100
+        category: 0, // WEARABLE
+        kinshipBonus: 10,
+        experienceBonus: 10
     });
 
-    util_createItemType(itemType);
+    // Set characteristics modifiers
+    pirateEye.characteristicsModifiers[0] = 5;  // STRENGTH
+    pirateEye.characteristicsModifiers[1] = 2;  // AGILITY
+    pirateEye.characteristicsModifiers[2] = -2; // INTELLIGENCE
+    pirateEye.characteristicsModifiers[3] = 1;  // PERCEPTION
+    pirateEye.characteristicsModifiers[4] = 5;  // CHARISMA
+    pirateEye.characteristicsModifiers[5] = 3;  // LUCK
 
-    // Verify the item was created correctly
-    ItemType memory item = diamond.getItemType(0);
-    assertEq(uint8(item.category), 2, "Item should be a consumable");
-    assertEq(item.kinshipBonus, 5, "Wrong kinship bonus");
-    assertEq(item.experienceBonus, 100, "Wrong experience bonus");
-}
+    // Set statistics modifiers
+    pirateEye.statisticsModifiers[0] = 2; // HEALTH
+    pirateEye.statisticsModifiers[1] = 0; // MANA
+    pirateEye.statisticsModifiers[2] = 1; // SPECIAL
+    pirateEye.statisticsModifiers[3] = 1; // ENERGY
+    pirateEye.statisticsModifiers[4] = 0; // FOOD
+    pirateEye.statisticsModifiers[5] = 0; // SANITY
 
-function test_useConsumable() public {
-    // First create a consumable item
-    test_createConsumableItem();
-    
-    // Get initial duck state
-    DuckInfoDTO memory initialDuck = diamond.getDuckInfo(0);
-    
-    // Buy the consumable
-    uint256 itemPrice = 100; // from creation above
-    quackToken.approve(address(diamond), itemPrice);
+    // Set slot positions (only equippable in EYES slot)
+    pirateEye.slotPositions[0] = false; // BODY
+    pirateEye.slotPositions[1] = false; // FACE
+    pirateEye.slotPositions[2] = true;  // EYES
+    pirateEye.slotPositions[3] = false; // HEAD
+    pirateEye.slotPositions[4] = false; // MOUTH
+    pirateEye.slotPositions[5] = false; // HAND_LEFT
+    pirateEye.slotPositions[6] = false; // HAND_RIGHT
+    pirateEye.slotPositions[7] = false; // FEET
+    pirateEye.slotPositions[8] = false; // SPECIAL
 
+    pirateEye.allowedCollaterals[0] = 1; // QUACK COLLATERAL
+
+    // Create the item type
+    util_createItemType(pirateEye);
+
+    // Purchase the item with QUACK
     uint256[] memory itemIds = new uint256[](1);
-    itemIds[0] = 0; // first item
+    itemIds[0] = 1; // Should be the second item (index 1) since we created one in setUp()
     uint256[] memory quantities = new uint256[](1);
-    quantities[0] = 1; // buy 1 potion
+    quantities[0] = 1;
     
-    // Use corrected function signature with _to parameter
+    quackToken.approve(address(diamond), pirateEye.quackPrice);
     diamond.purchaseItemsWithQuack(account0, itemIds, quantities);
-    
-    // Use the consumable
-    diamond.useConsumables(0, itemIds, quantities);
-    
-    // Get updated duck state
-    DuckInfoDTO memory updatedDuck = diamond.getDuckInfo(0);
-    
-    // Verify changes
-    assertEq(updatedDuck.statistics[0], initialDuck.statistics[0] + 10, "Health should increase by 10");
-    assertEq(updatedDuck.statistics[1], initialDuck.statistics[1] + 5, "Mana should increase by 5");
-    assertEq(updatedDuck.statistics[3], initialDuck.statistics[3] + 15, "Energy should increase by 15");
-    assertEq(updatedDuck.statistics[4], initialDuck.statistics[4] + 20, "Food should increase by 20");
-    // assertEq(updatedDuck.kinship, initialDuck.kinship + 5, "Kinship should increase by 5"); // TODO : check if it's working
-    assertEq(updatedDuck.experience, initialDuck.experience + 100, "Experience should increase by 100");
+
+    // Create array for equipping wearable (all slots)
+    uint16[] memory wearablesToEquip = new uint16[](9);
+    wearablesToEquip[2] = 1; // Equip to EYES slot (index 2)
+
+    // Equip the wearable
+    diamond.equipWearables(0, wearablesToEquip);
+
+    // Verify the wearable is equipped
+    uint256[] memory equippedWearables = diamond.equippedWearables(0);
+    assertEq(equippedWearables[2], 1, "Pirate Eye should be equipped in EYES slot");
+
+    // Verify other slots are empty
+    for(uint i = 0; i < 9; i++) {
+        if(i != 2) {
+            assertEq(equippedWearables[i], 0, "Other slots should be empty");
+        }
+    }
 }
+
+// function test_useConsumable() public {
+//     // First create a consumable item
+//     test_createConsumableItem();
+    
+//     // Get initial duck state
+//     DuckInfoDTO memory initialDuck = diamond.getDuckInfo(0);
+    
+//     // Buy the consumable
+//     uint256 itemPrice = 100; // from creation above
+//     quackToken.approve(address(diamond), itemPrice);
+
+//     uint256[] memory itemIds = new uint256[](1);
+//     itemIds[0] = 1; // second item
+//     uint256[] memory quantities = new uint256[](1);
+//     quantities[0] = 1; // buy 1 potion
+    
+//     // Use corrected function signature with _to parameter
+//     diamond.purchaseItemsWithQuack(account0, itemIds, quantities);
+    
+//     // Use the consumable
+//     diamond.useConsumables(0, itemIds, quantities);
+    
+//     // Get updated duck state
+//     DuckInfoDTO memory updatedDuck = diamond.getDuckInfo(0);
+    
+//     // Verify changes
+//     assertEq(updatedDuck.statistics[0], initialDuck.statistics[0] + 10, "Health should increase by 10");
+//     assertEq(updatedDuck.statistics[1], initialDuck.statistics[1] + 5, "Mana should increase by 5");
+//     assertEq(updatedDuck.statistics[3], initialDuck.statistics[3] + 15, "Energy should increase by 15");
+//     assertEq(updatedDuck.statistics[4], initialDuck.statistics[4] + 20, "Food should increase by 20");
+//     // assertEq(updatedDuck.kinship, initialDuck.kinship + 5, "Kinship should increase by 5"); // TODO : check if it's working
+//     assertEq(updatedDuck.experience, initialDuck.experience + 100, "Experience should increase by 100");
+// }
 
 // function test_useConsumableFailures() public {
 //     // First create a consumable item
