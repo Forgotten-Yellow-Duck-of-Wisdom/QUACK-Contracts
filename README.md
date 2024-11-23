@@ -18,6 +18,8 @@ forge script scripts/createFirstCycle.s.sol:CreateFirstCycle --broadcast -vvvv
 - [ ] modif - items avec maxQty 0 = infinie maintenant (check potentielles erreurs)
 - [ ] fix stats - max stats set at eggs buy / egg claim twice
 ## TODO 
+- [ ] add skills (skills level up a l'usage avec des paliers qui peuvent etre augmente en mergeant des skills = level up)
+- [ ] add 2 rings slot to wearables
 - [ ] Fix characterstics / statistics / traits on item, wearables / consumables etc 
 - [ ] Add Respec for Ducks feature
 - [~] Add Items feature (set first skin for cycle)

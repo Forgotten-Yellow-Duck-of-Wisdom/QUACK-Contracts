@@ -22,7 +22,7 @@ contract CreateFirstCycle is Script {
     }
 
     function run() public {
-        address target = 0x0eEbe5984f388673Ae4c7b14CA91e8F721a2a108; // baseSepolia testnet
+        address target = 0xA8e891FB3249D4DdD389364ac5CDB3d4f70d8D71; // baseSepolia testnet
         diamond = IDiamondProxy(target);
         uint256 maxCycleDuckQty = 10000;
 
@@ -220,7 +220,7 @@ contract CreateFirstCycle is Script {
         newItem_pirateEye.slotPositions[7] = false; // FEET
         newItem_pirateEye.slotPositions[8] = false; // SPECIAL
 
-        newItem_pirateEye.allowedCollaterals[0] = 0; // QUACK COLLATERAL
+        newItem_pirateEye.allowedCollaterals[0] = 1; // QUACK COLLATERAL
         /////////////////////////////////////////////////////////////////////
 
 
