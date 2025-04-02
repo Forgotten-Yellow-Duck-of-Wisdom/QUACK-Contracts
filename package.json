@@ -35,5 +35,8 @@
   "engines": {
     "node": ">=20.0.0"
   },
-  "engineStrict": true
+  "engineStrict": true,
+  "dependencies": {
+    "yarn": "^1.22.22"
+  }
 }

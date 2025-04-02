@@ -16,9 +16,11 @@ library LibChainlinkVRF {
         AppStorage storage s = LibAppStorage.diamondStorage();
         s.ducks[_duckId].status = DuckStatusType.VRF_PENDING;
         bytes memory extraArgs = abi.encodeWithSelector(bytes4(keccak256("VRF ExtraArgsV1")), VRFExtraArgsV1(true));
-        requestId = s.chainlink_vrf_wrapper.requestRandomWordsInNative{value: _requestPrice}(
-            s.vrfCallbackGasLimit, s.vrfRequestConfirmations, s.vrfNumWords, extraArgs
-        );
+        requestId = _duckId;
+        // Commented for testnet
+        // requestId = s.chainlink_vrf_wrapper.requestRandomWordsInNative{value: _requestPrice}(
+        //     s.vrfCallbackGasLimit, s.vrfRequestConfirmations, s.vrfNumWords, extraArgs
+        // );
 
         // s.vrfRequests[requestId] = RequestStatus({
         //     paid: requestPrice,
@@ -30,7 +32,7 @@ library LibChainlinkVRF {
 
         // START - FOR TESTING PURPOSE ONLY
         uint256[] memory randomWords = new uint256[](1);
-        randomWords[0] = 1;
+        randomWords[0] = _duckId;
         LibDuck.openEggWithVRF(requestId, randomWords);
         // REMOVE FOR DEPLOYMENT - END
 

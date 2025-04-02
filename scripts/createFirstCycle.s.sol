@@ -22,7 +22,7 @@ contract CreateFirstCycle is Script {
     }
 
     function run() public {
-        address target = 0xA8e891FB3249D4DdD389364ac5CDB3d4f70d8D71; // baseSepolia testnet
+        address target = 0xBaf52B4B45A28293ACE0116918a9fFD31D57334D; // baseSepolia testnet
         diamond = IDiamondProxy(target);
         uint256 maxCycleDuckQty = 10000;
 

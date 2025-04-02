@@ -2,6 +2,7 @@
 pragma solidity >=0.8.21;
 
 import {MetaTxContextStorage, CollateralTypeInfo} from "../shared/Structs.sol";
+import {DisplaySlot, DisplayRental} from "../shared/Structs_DisplaySlot.sol";
 import {Cycle, DuckInfo} from "../shared/Structs_Ducks.sol";
 import {VRFV2PlusWrapperInterface} from "../interfaces/IVRFV2PlusWrapperInterface.sol";
 import {ItemType} from "../shared/Structs_Items.sol";
@@ -95,6 +96,13 @@ struct AppStorage {
     mapping(address => mapping(uint256 => uint256[])) nftItems;
     // indexes are stored 1 higher so that 0 means no items in items array
     mapping(address => mapping(uint256 => mapping(uint256 => uint256))) nftItemIndexes;
+    /////////////////// Display Slots ///////////////////
+    uint256 displaySlotCounter;
+    mapping(uint256 => DisplaySlot) displaySlots;
+    uint256[] displaySlotIds;
+    mapping(uint256 => DisplayRental) slotRentals;
+    mapping(address => uint256[]) userRentedSlots;
+    mapping(address => mapping(uint256 => uint256)) userRentedSlotIndexes;
 }
 
 // ??

@@ -72,7 +72,8 @@ contract DuckGameFacet is AccessControl {
         AppStorage storage s = LibAppStorage.diamondStorage();
         address owner = _msgSender();
         uint256 requestPrice = s.chainlink_vrf_wrapper.calculateRequestPriceNative(s.vrfCallbackGasLimit, s.vrfNumWords);
-        require(msg.value >= requestPrice * _duckIds.length, "DuckGameFacet: Not enough native funds for chainlink VRF");
+        // Commented for testnet 
+        // require(msg.value >= requestPrice * _duckIds.length, "DuckGameFacet: Not enough native funds for chainlink VRF");
         for (uint256 i; i < _duckIds.length; i++) {
             uint64 duckId = _duckIds[i];
             require(s.ducks[duckId].status == DuckStatusType.CLOSED_EGGS, "DuckGameFacet: Eggs is not closed");

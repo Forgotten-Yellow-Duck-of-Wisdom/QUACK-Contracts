@@ -22,4 +22,10 @@ contract ProtocolFacet is AccessControl {
     function quackAddress() external view returns (address contract_) {
         contract_ = LibAppStorage.diamondStorage().quackTokenAddress;
     }
+    
+    ///@notice Query the treasury address
+    ///@return address_ the deployed address of the treasury
+    function getTreasuryAddress() external view returns (address address_) {
+        address_ = LibAppStorage.diamondStorage().treasuryAddress;
+    }
 }

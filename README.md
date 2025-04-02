@@ -1,11 +1,27 @@
 # Quack Protocol
 
 baseSepolia testnet
-0xa837D2112A4A81baec1715B3a38A60cc93Fca99F
-
+0xBaf52B4B45A28293ACE0116918a9fFD31D57334D
 
 # IMPORTANT
 - for mainnet dep, remove test chainlink in VRFLib 
+
+## Installation
+
+```shell
+$ foundryup  # On OS X you may first need to run: brew install libusb
+$ pnpm i
+$ git submodule update --init --recursive
+```
+
+## Usage
+
+```
+$ yarn clean
+$ yarn build
+$ yarn test
+$ yarn dep
+```
 
 ## CMDs
 
